@@ -1,4 +1,5 @@
 *.pcap
+target/
 
 
 # User-specific stuff
