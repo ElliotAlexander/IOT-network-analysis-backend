@@ -5,6 +5,7 @@ import org.pcap4j.packet.IpPacket;
 import org.pcap4j.packet.Packet;
 import org.pcap4j.packet.TcpPacket;
 import org.pcap4j.packet.UdpPacket;
+import soton.gdp31.exceptions.InvalidIPPacketException;
 
 enum ProtocolType {
     TCP,
@@ -28,13 +29,17 @@ public class PacketWrapper {
 
     private ProtocolType protocol_type;
 
-    public PacketWrapper(Packet p, long timestamp, long packet_count) {
+    public PacketWrapper(Packet p, long timestamp, long packet_count) throws InvalidIPPacketException {
 
         this.timestamp = timestamp;
         this.packet_count = packet_count;
 
         this.isIpPacket = p.contains(IpPacket.class);
         IpPacket ipPacket = p.get(IpPacket.class);
+
+        if(ipPacket == null) {
+            throw new InvalidIPPacketException();
+        }
         this.srcIp = ipPacket.getHeader().getSrcAddr().getHostAddress().toString();
         this.destIp = ipPacket.getHeader().getDstAddr().getHostAddress().toString();
 
@@ -95,5 +100,10 @@ public class PacketWrapper {
 
     public long getTimestamp() {
         return timestamp;
+    }
+
+    @Override
+    public String toString(){
+        return "[" + packet_count + "] " + Long.toString(timestamp) + " | " + (this.isHTTPS ? "HTTPS" : "HTTP") + ":" + this.protocol_type.toString() + " " + this.getSrcIp() + ":" + this.srcPort + " -> " + this.getDestIp() + ":" + this.destPort;
     }
 }
