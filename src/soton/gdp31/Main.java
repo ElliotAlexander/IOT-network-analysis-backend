@@ -10,8 +10,6 @@ import java.util.Enumeration;
 
 public class Main {
 
-
-
     private final String interface_name = "en0";
     private final String handle_dump_name = "out.pcap";
 
