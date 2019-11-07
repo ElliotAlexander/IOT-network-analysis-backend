@@ -5,7 +5,7 @@ jobs:
     docker: 
     - image: circleci/openjdk:8-jdk-stretch 
     steps:
-      - run: apt-get install pcap libpcap.x86_64
+      - run: sudo apt-get update && sudo apt-get install libpcap-dev 
       - checkout 
       - restore_cache:           
            key: gdp-group-31-backend-{{ checksum "pom.xml" }}
