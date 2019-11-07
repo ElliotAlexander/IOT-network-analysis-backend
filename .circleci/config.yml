@@ -7,7 +7,7 @@ jobs:
     steps: 
       - checkout 
       - restore_cache:           
-        key: gdp-group-31-backend-{{ checksum "pom.xml" }}
+           key: gdp-group-31-backend-{{ checksum "pom.xml" }}
       - run: mvn dependency:go-offline 
       - save_cache:
           paths:
