@@ -5,13 +5,8 @@ import org.pcap4j.packet.IpPacket;
 import org.pcap4j.packet.Packet;
 import org.pcap4j.packet.TcpPacket;
 import org.pcap4j.packet.UdpPacket;
+import soton.gdp31.enums.ProtocolType;
 import soton.gdp31.exceptions.InvalidIPPacketException;
-
-enum ProtocolType {
-    TCP,
-    UDP,
-    UNKNOWN
-};
 
 public class PacketWrapper {
 
