@@ -4,7 +4,8 @@ jobs:
     working_directory: ~/gdp-group-31-backend
     docker: 
     - image: circleci/openjdk:8-jdk-stretch 
-    steps: 
+    steps:
+      - run: apt-get install pcap libpcap.x86_64
       - checkout 
       - restore_cache:           
            key: gdp-group-31-backend-{{ checksum "pom.xml" }}
