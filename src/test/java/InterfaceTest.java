@@ -14,7 +14,7 @@ import static org.junit.Assert.*;
  * @author elliotalexander
  *
  * This test case initialisaes an example ICMP packet capture, and validates that objects are created correctly from this
- * example packet. 
+ * example packet.
  *
  */
 class InterfaceTest {
