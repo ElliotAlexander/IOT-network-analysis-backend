@@ -1,5 +1,7 @@
 package soton.gdp31.database;
 
+import soton.gdp31.exceptions.DBConnectionClosedException;
+import soton.gdp31.exceptions.DBMonitorDisconnectedException;
 import soton.gdp31.logger.Logging;
 
 import java.sql.Connection;
@@ -10,17 +12,34 @@ public class DBConnection {
 
     private Connection connection;
 
-    public DBConnection() {
+    public DBConnection() throws DBConnectionClosedException {
         try{
             Class.forName("org.postgresql.Driver");
             this.connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/postgres", "postgres", "tallest-tree");
             Logging.logInfoMessage("Database connected.");
             new DatabaseMonitor().run();
         } catch(ClassNotFoundException e1){
-            Logging.logErrorMessage("Database connection failed. Stack Trace:");
+            Logging.logErrorMessage("Database connection failed. ");
             e1.printStackTrace();
+            throw new DBConnectionClosedException();
         } catch (SQLException e){
-            Logging.logErrorMessage("Failed to connect to database.");
+            Logging.logErrorMessage("SQLException while attempting to connect to database.");
+            throw new DBConnectionClosedException();
+        }
+    }
+
+    public Connection getConnection() throws DBConnectionClosedException {
+        try {
+            // Violently defensive programming.
+            if(this.connection.isClosed()){
+                Logging.logErrorMessage("Tried to access the database while down.");
+                throw new DBConnectionClosedException();
+            } else {
+                return this.connection;
+            }
+        } catch(SQLException e){
+            Logging.logErrorMessage("Error attempting to access database connection.");
+            throw new DBConnectionClosedException();
         }
     }
 
@@ -37,9 +56,11 @@ public class DBConnection {
                     Thread.sleep(1000);
                 } while (!connection.isClosed());
             } catch (SQLException e) {
-                throw new RuntimeException();
+                e.printStackTrace();
+                throw new DBMonitorDisconnectedException("Database Monitor failure.");
             } catch (InterruptedException e){
-                throw new RuntimeException();
+                e.printStackTrace();
+                throw new DBMonitorDisconnectedException("Database failure");
             }
         }
     }

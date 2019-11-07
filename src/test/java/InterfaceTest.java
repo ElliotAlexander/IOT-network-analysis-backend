@@ -7,6 +7,8 @@ import org.pcap4j.packet.Packet;
 import soton.gdp31.PacketWrapper;
 import soton.gdp31.enums.ProtocolType;
 
+import java.io.File;
+
 import static org.junit.Assert.*;
 
 /**
