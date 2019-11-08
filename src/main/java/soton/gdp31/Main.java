@@ -3,9 +3,10 @@ package soton.gdp31;
 import org.pcap4j.core.*;
 
 import soton.gdp31.database.DBConnection;
-import soton.gdp31.exceptions.DBConnectionClosedException;
+import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.exceptions.InterfaceUnknownException;
 import soton.gdp31.logger.Logging;
+import soton.gdp31.threads.PacketThreadListener;
 import soton.gdp31.utils.InterfaceUtils;
 
 public class Main {

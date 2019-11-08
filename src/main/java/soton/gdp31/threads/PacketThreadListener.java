@@ -1,8 +1,9 @@
-package soton.gdp31;
+package soton.gdp31.threads;
 
 import org.pcap4j.core.*;
 import org.pcap4j.packet.*;
 import soton.gdp31.exceptions.InvalidIPPacketException;
+import soton.gdp31.wrappers.PacketWrapper;
 
 import java.io.EOFException;
 import java.util.concurrent.TimeoutException;

@@ -1,4 +1,4 @@
-package soton.gdp31.exceptions;
+package soton.gdp31.exceptions.runtime;
 
 public class DBMonitorDisconnectedException extends RuntimeException {
     public DBMonitorDisconnectedException(){}

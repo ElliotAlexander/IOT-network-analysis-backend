@@ -1,13 +1,10 @@
 
-import org.junit.Before;
 import org.junit.jupiter.api.*;
 import org.pcap4j.core.PcapHandle;
 import org.pcap4j.core.Pcaps;
 import org.pcap4j.packet.Packet;
-import soton.gdp31.PacketWrapper;
+import soton.gdp31.wrappers.PacketWrapper;
 import soton.gdp31.enums.ProtocolType;
-
-import java.io.File;
 
 import static org.junit.Assert.*;
 

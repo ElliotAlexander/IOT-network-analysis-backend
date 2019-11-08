@@ -1,7 +1,7 @@
 package soton.gdp31.database;
 
-import soton.gdp31.exceptions.DBConnectionClosedException;
-import soton.gdp31.exceptions.DBMonitorDisconnectedException;
+import soton.gdp31.exceptions.database.DBConnectionClosedException;
+import soton.gdp31.exceptions.runtime.DBMonitorDisconnectedException;
 import soton.gdp31.logger.Logging;
 
 import java.sql.Connection;
@@ -59,11 +59,17 @@ public class DBConnection {
 
                 while(true) {
                     try {
+                        // connection.isClosed doesn't appear to work for dropped backends
+                        // connection.isValid isn't implemented
+
+                        // Attempt a basic query
                         ResultSet rs = connection.createStatement().executeQuery("select 1;");
+                        // If the query fails, it'll throw a SQL exception.
+
+                        // If no exception sleep and carry on.
                         Thread.sleep(POLLING_COOLDOWN_MS);
-                        Logging.logInfoMessage("Connected");
                     } catch (SQLException e) {
-                        int retries = 0;
+                        int retries = 1;
                         connection = null;
                         while (connection == null) {
                             Logging.logInfoMessage("Attempting to reconnect to database.");
@@ -72,6 +78,8 @@ public class DBConnection {
                                 Class.forName("org.postgresql.Driver");
                                 DBConnection.this.connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/postgres", "postgres", "tallest-tree");
                                 Logging.logInfoMessage("Reconnected!");
+                                // Reset retries - in case we lose connection again.
+                                retries = 1;
                                 break;
                             } catch (ClassNotFoundException | SQLException ex) {
                                 Logging.logWarnMessage("Reconnection failed. Retrying in five seconds. " + retries + " / " + RETRY_CAP);

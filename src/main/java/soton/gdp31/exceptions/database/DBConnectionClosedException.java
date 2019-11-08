@@ -1,4 +1,4 @@
-package soton.gdp31.exceptions;
+package soton.gdp31.exceptions.database;
 
 public class DBConnectionClosedException extends Exception {
 
