@@ -6,11 +6,12 @@ import soton.gdp31.logger.Logging;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class DBConnection {
 
-    private Connection connection;
+    protected Connection connection;
 
     public DBConnection() throws DBConnectionClosedException {
         try{
@@ -45,23 +46,47 @@ public class DBConnection {
 
     public class DatabaseMonitor extends Thread  {
 
+        public static final int RETRY_CAP = 10;
+        public static final int RETRY_COOLDOWN_MS = 5000;
+        public static final int POLLING_COOLDOWN_MS = 10000;
+
         public DatabaseMonitor(){
             Logging.logInfoMessage("Initialising database monitor.");
         }
 
         @Override
         public void run() {
-            try {
-                do {
-                    Thread.sleep(1000);
-                } while (!connection.isClosed());
-            } catch (SQLException e) {
-                e.printStackTrace();
-                throw new DBMonitorDisconnectedException("Database Monitor failure.");
-            } catch (InterruptedException e){
-                e.printStackTrace();
-                throw new DBMonitorDisconnectedException("Database failure");
-            }
+
+                while(true) {
+                    try {
+                        ResultSet rs = connection.createStatement().executeQuery("select 1;");
+                        Thread.sleep(POLLING_COOLDOWN_MS);
+                        Logging.logInfoMessage("Connected");
+                    } catch (SQLException e) {
+                        int retries = 0;
+                        connection = null;
+                        while (connection == null) {
+                            Logging.logInfoMessage("Attempting to reconnect to database.");
+                            try {
+                                Thread.sleep(RETRY_COOLDOWN_MS);
+                                Class.forName("org.postgresql.Driver");
+                                DBConnection.this.connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/postgres", "postgres", "tallest-tree");
+                                Logging.logInfoMessage("Reconnected!");
+                                break;
+                            } catch (ClassNotFoundException | SQLException ex) {
+                                Logging.logWarnMessage("Reconnection failed. Retrying in five seconds. " + retries + " / " + RETRY_CAP);
+                                retries++;
+                                if(retries == RETRY_CAP) {
+                                    throw new DBMonitorDisconnectedException("Failed to reconnect after " + retries + " attempts");
+                                }
+                            } catch(InterruptedException x){
+                                break;
+                            }
+                        }
+                    } catch (InterruptedException e ){
+                        throw new RuntimeException();
+                    }
+                }
         }
     }
 
