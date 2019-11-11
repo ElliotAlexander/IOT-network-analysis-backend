@@ -18,7 +18,7 @@ public class DBConnection {
             Class.forName("org.postgresql.Driver");
             this.connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/postgres", "postgres", "tallest-tree");
             Logging.logInfoMessage("Database connected.");
-            new DatabaseMonitor().run();
+            new DatabaseMonitor().start();
         } catch(ClassNotFoundException e1){
             Logging.logErrorMessage("Database connection failed. ");
             e1.printStackTrace();

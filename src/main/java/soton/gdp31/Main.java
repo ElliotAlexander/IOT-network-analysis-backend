@@ -50,6 +50,7 @@ public class Main {
         }
 
         // Start our listening thread.
+        Logging.logInfoMessage("Starting packet listner thread");
         this.thread = new PacketThreadListener(handle, dumper);
         this.thread.start();
     }

@@ -41,9 +41,7 @@ public class PacketWrapper {
         this.srcIp = ipPacket.getHeader().getSrcAddr().getHostAddress().toString();
         this.destIp = ipPacket.getHeader().getDstAddr().getHostAddress().toString();
 
-        this.src_mac_address = ipPacket.getPayload().getHeader()
-
-        String proto= ipPacket.getHeader().getProtocol().name();
+        String proto = ipPacket.getHeader().getProtocol().name();
         try {
                 if (proto.equalsIgnoreCase("TCP")) {
                     TcpPacket tcpPkt = p.get(TcpPacket.class);
