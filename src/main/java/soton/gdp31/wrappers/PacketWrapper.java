@@ -1,4 +1,4 @@
-package soton.gdp31;
+package soton.gdp31.wrappers;
 
 
 import org.pcap4j.packet.IpPacket;
@@ -22,6 +22,9 @@ public class PacketWrapper {
     private long timestamp;
     private long packet_count;
 
+    private String src_mac_address;
+    private String dest_mac_address;
+
     private ProtocolType protocol_type;
 
     public PacketWrapper(Packet p, long timestamp, long packet_count) throws InvalidIPPacketException {
@@ -38,7 +41,7 @@ public class PacketWrapper {
         this.srcIp = ipPacket.getHeader().getSrcAddr().getHostAddress().toString();
         this.destIp = ipPacket.getHeader().getDstAddr().getHostAddress().toString();
 
-        String proto= ipPacket.getHeader().getProtocol().name();
+        String proto = ipPacket.getHeader().getProtocol().name();
         try {
                 if (proto.equalsIgnoreCase("TCP")) {
                     TcpPacket tcpPkt = p.get(TcpPacket.class);

@@ -1,8 +1,9 @@
-package soton.gdp31;
+package soton.gdp31.threads;
 
 import org.pcap4j.core.*;
 import org.pcap4j.packet.*;
 import soton.gdp31.exceptions.InvalidIPPacketException;
+import soton.gdp31.wrappers.PacketWrapper;
 
 import java.io.EOFException;
 import java.util.concurrent.TimeoutException;
@@ -32,7 +33,7 @@ public class PacketThreadListener extends Thread {
                 radiotap_top_level_packet = handle.getNextPacketEx();
                 packet_count++;
                 PacketWrapper packet = new PacketWrapper(radiotap_top_level_packet, handle.getTimestamp().toInstant().toEpochMilli(), packet_count);
-                System.out.println(packet.toString());
+                pcap_dumper.dump(radiotap_top_level_packet);
             } catch (PcapNativeException | TimeoutException | NotOpenException | EOFException e) {
                 System.out.println("Error - failed to maintain handle.");
                 handle.close();
