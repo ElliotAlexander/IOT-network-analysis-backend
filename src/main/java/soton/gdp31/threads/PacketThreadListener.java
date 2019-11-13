@@ -28,12 +28,12 @@ public class PacketThreadListener extends Thread {
     @Override
     public void run() {
         while (handle.isOpen()) {
-            Packet radiotap_top_level_packet = null;
+            EthernetPacket ethernet_packet = null;
             try {
-                radiotap_top_level_packet = handle.getNextPacketEx();
+                ethernet_packet = (EthernetPacket) handle.getNextPacketEx();
                 packet_count++;
-                PacketWrapper packet = new PacketWrapper(radiotap_top_level_packet, handle.getTimestamp().toInstant().toEpochMilli(), packet_count);
-                pcap_dumper.dump(radiotap_top_level_packet);
+                PacketWrapper packet = new PacketWrapper(ethernet_packet, handle.getTimestamp().toInstant().toEpochMilli(), packet_count);
+                pcap_dumper.dump(ethernet_packet);
             } catch (PcapNativeException | TimeoutException | NotOpenException | EOFException e) {
                 System.out.println("Error - failed to maintain handle.");
                 handle.close();

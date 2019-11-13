@@ -1,10 +1,7 @@
 package soton.gdp31.wrappers;
 
 
-import org.pcap4j.packet.IpPacket;
-import org.pcap4j.packet.Packet;
-import org.pcap4j.packet.TcpPacket;
-import org.pcap4j.packet.UdpPacket;
+import org.pcap4j.packet.*;
 import soton.gdp31.enums.ProtocolType;
 import soton.gdp31.exceptions.InvalidIPPacketException;
 
@@ -27,10 +24,15 @@ public class PacketWrapper {
 
     private ProtocolType protocol_type;
 
-    public PacketWrapper(Packet p, long timestamp, long packet_count) throws InvalidIPPacketException {
+    public PacketWrapper(EthernetPacket p, long timestamp, long packet_count) throws InvalidIPPacketException {
 
         this.timestamp = timestamp;
         this.packet_count = packet_count;
+
+        src_mac_address = p.getHeader().getSrcAddr().toString();
+        dest_mac_address = p.getHeader().getDstAddr().toString();
+
+        System.out.println(src_mac_address);
 
         this.isIpPacket = p.contains(IpPacket.class);
         IpPacket ipPacket = p.get(IpPacket.class);

@@ -6,12 +6,14 @@ import java.util.HashMap;
 
 public class DeviceObjectCache {
 
+    public static DeviceObjectCache device_object_cache = new DeviceObjectCache();
+
     HashMap<byte[], Long> device_seen_cache;
 
     // Cache timeout in seconds
     public static final int CACHE_TIMEOUT = 10000;
 
-    public DeviceObjectCache(){
+    private DeviceObjectCache(){
         device_seen_cache = new HashMap<byte[], Long>();
     }
 
