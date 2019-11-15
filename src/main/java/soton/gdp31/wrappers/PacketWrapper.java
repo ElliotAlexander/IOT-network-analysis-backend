@@ -1,14 +1,23 @@
 package soton.gdp31.wrappers;
 
 
+import org.apache.cassandra.utils.UUIDGen;
 import org.pcap4j.packet.*;
 import soton.gdp31.enums.ProtocolType;
 import soton.gdp31.exceptions.InvalidIPPacketException;
+import soton.gdp31.logger.Logging;
+import soton.gdp31.utils.UUIDGenerator;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.security.NoSuchAlgorithmException;
 
 public class PacketWrapper {
 
     private boolean isIpPacket;
     private int srcPort, destPort;
+
+    private String hostname;
 
     private String srcIp;
     private String destIp;
@@ -24,6 +33,8 @@ public class PacketWrapper {
 
     private ProtocolType protocol_type;
 
+    private byte[] uuid;
+
     public PacketWrapper(EthernetPacket p, long timestamp, long packet_count) throws InvalidIPPacketException {
 
         this.timestamp = timestamp;
@@ -32,16 +43,33 @@ public class PacketWrapper {
         src_mac_address = p.getHeader().getSrcAddr().toString();
         dest_mac_address = p.getHeader().getDstAddr().toString();
 
-        System.out.println(src_mac_address);
-
         this.isIpPacket = p.contains(IpPacket.class);
         IpPacket ipPacket = p.get(IpPacket.class);
 
         if(ipPacket == null) {
             throw new InvalidIPPacketException();
         }
-        this.srcIp = ipPacket.getHeader().getSrcAddr().getHostAddress().toString();
-        this.destIp = ipPacket.getHeader().getDstAddr().getHostAddress().toString();
+        this.srcIp = ipPacket.getHeader().getSrcAddr().getHostAddress();
+        this.destIp = ipPacket.getHeader().getDstAddr().getHostAddress();
+
+        try {
+            this.uuid = UUIDGenerator.generateUUID(src_mac_address);
+            if(this.uuid == null){
+                Logging.logErrorMessage("Failed to generate UUID for packet.");
+                throw new NoSuchAlgorithmException();
+            }
+        } catch(NoSuchAlgorithmException e) {
+            Logging.logErrorMessage("Error initialising connections for device " + src_mac_address);
+            e.printStackTrace();
+        }
+
+        try {
+            InetAddress host = InetAddress.getByName(this.srcIp);
+            this.hostname = host.getHostName();
+        } catch (UnknownHostException e) {
+            Logging.logWarnMessage("Error resolving hostname for " + this.srcIp);
+        }
+
 
         String proto = ipPacket.getHeader().getProtocol().name();
         try {
@@ -88,6 +116,14 @@ public class PacketWrapper {
 
     public int getPacketSize() {
         return packetSize;
+    }
+
+    public String getHostname(){
+        return this.hostname;
+    }
+
+    public byte[] getUUID(){
+        return this.uuid;
     }
 
     public ProtocolType getProtocol_type() {

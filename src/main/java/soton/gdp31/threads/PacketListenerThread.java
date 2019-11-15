@@ -4,12 +4,13 @@ import org.pcap4j.core.*;
 import org.pcap4j.packet.*;
 import soton.gdp31.database.DBPacketHandler;
 import soton.gdp31.exceptions.InvalidIPPacketException;
+import soton.gdp31.utils.PacketProcessingQueue;
 import soton.gdp31.wrappers.PacketWrapper;
 
 import java.io.EOFException;
 import java.util.concurrent.TimeoutException;
 
-public class PacketThreadListener extends Thread {
+public class PacketListenerThread extends Thread {
 
     private final PcapHandle handle;
     private final PcapDumper pcap_dumper;
@@ -19,12 +20,12 @@ public class PacketThreadListener extends Thread {
     private DBPacketHandler packetHandler = new DBPacketHandler();
 
 
-    public PacketThreadListener(PcapHandle handle, PcapDumper pcap_dumper) {
+    public PacketListenerThread(PcapHandle handle, PcapDumper pcap_dumper) {
         this.handle = handle;
         this.pcap_dumper = pcap_dumper;
     }
 
-    public PacketThreadListener(PcapHandle handle, PcapDumper pcap_dumper, long packet_count) {
+    public PacketListenerThread(PcapHandle handle, PcapDumper pcap_dumper, long packet_count) {
         this(handle, pcap_dumper);
         this.packet_count = packet_count;
     }
@@ -37,7 +38,7 @@ public class PacketThreadListener extends Thread {
                 ethernet_packet = (EthernetPacket) handle.getNextPacketEx();
                 packet_count++;
                 PacketWrapper packet = new PacketWrapper(ethernet_packet, handle.getTimestamp().toInstant().toEpochMilli(), packet_count);
-                pcap_dumper.dump(ethernet_packet);
+                PacketProcessingQueue.instance.push(packet);
             } catch (PcapNativeException | TimeoutException | NotOpenException | EOFException e) {
                 System.out.println("Error - failed to maintain handle.");
                 handle.close();
