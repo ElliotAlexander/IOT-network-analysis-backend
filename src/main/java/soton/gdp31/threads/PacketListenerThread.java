@@ -2,6 +2,7 @@ package soton.gdp31.threads;
 
 import org.pcap4j.core.*;
 import org.pcap4j.packet.*;
+import soton.gdp31.database.DBPacketHandler;
 import soton.gdp31.exceptions.InvalidIPPacketException;
 import soton.gdp31.wrappers.PacketWrapper;
 
@@ -14,6 +15,9 @@ public class PacketThreadListener extends Thread {
     private final PcapDumper pcap_dumper;
 
     private long packet_count = 0;
+
+    private DBPacketHandler packetHandler = new DBPacketHandler();
+
 
     public PacketThreadListener(PcapHandle handle, PcapDumper pcap_dumper) {
         this.handle = handle;
