@@ -33,7 +33,6 @@ public class PacketThreadListener extends Thread {
                 radiotap_top_level_packet = handle.getNextPacketEx();
                 packet_count++;
                 PacketWrapper packet = new PacketWrapper(radiotap_top_level_packet, handle.getTimestamp().toInstant().toEpochMilli(), packet_count);
-                pcap_dumper.dump(radiotap_top_level_packet);
             } catch (PcapNativeException | TimeoutException | NotOpenException | EOFException e) {
                 System.out.println("Error - failed to maintain handle.");
                 handle.close();
