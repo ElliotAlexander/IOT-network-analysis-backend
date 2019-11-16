@@ -6,7 +6,7 @@ This is the Java based backend for GDP Group 31.
 
 ## IntelliJ
 
-Note that the project comes bundled with a partially ignored .idea folder, as well as a .iml file. This is to allow a user to import the project into IntelliJ in **theory** one easy stroke. The project is build, tested and packaged using **maven**, the tooling for which should automatically be enabled inside IntelliJ (you can find this menu down the right hand side pane of the UI). This is probably the easiest way to get the project up and running, and allows you to run and debug the project in-IDE. That said, instructions to get the project running on the command line are below. 
+Note that the project comes bundled with a partially ignored .idea folder, as well as a .iml file. This is to allow a user to import the project into IntelliJ in one easy stroke (*in theory*). The project is built, tested and packaged using **maven**, the tooling for which should automatically be enabled inside IntelliJ (you can find this menu down the right hand side pane of the UI). This is probably the easiest way to get the project up and running, and allows you to run and debug the project in-IDE. That said, instructions to get the project running on the command line are below. 
 
 ## Running the project manually
 
