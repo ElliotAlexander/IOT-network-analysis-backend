@@ -8,6 +8,7 @@ import soton.gdp31.exceptions.InvalidIPPacketException;
 import soton.gdp31.logger.Logging;
 import soton.gdp31.utils.UUIDGenerator;
 
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
@@ -18,6 +19,8 @@ public class PacketWrapper {
     private int srcPort, destPort;
 
     private String hostname;
+
+    private boolean outgoing_traffic;
 
     private String srcIp;
     private String destIp;
@@ -51,6 +54,17 @@ public class PacketWrapper {
         }
         this.srcIp = ipPacket.getHeader().getSrcAddr().getHostAddress();
         this.destIp = ipPacket.getHeader().getDstAddr().getHostAddress();
+
+        try {
+            InetAddress IP = InetAddress.getLocalHost();
+            if(this.srcIp == InetAddress.getLocalHost().toString()){
+                System.out.println("Outgoing packet");
+            } else {
+                System.out.println(this.srcIp + " : " + Inet4Address.getLocalHost().getHostAddress());
+            }
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
 
         try {
             this.uuid = UUIDGenerator.generateUUID(src_mac_address);

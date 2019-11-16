@@ -39,6 +39,7 @@ public class PacketListenerThread extends Thread {
                 packet_count++;
                 PacketWrapper packet = new PacketWrapper(ethernet_packet, handle.getTimestamp().toInstant().toEpochMilli(), packet_count);
                 PacketProcessingQueue.instance.push(packet);
+                pcap_dumper.dump(ethernet_packet);
             } catch (PcapNativeException | TimeoutException | NotOpenException | EOFException e) {
                 System.out.println("Error - failed to maintain handle.");
                 handle.close();

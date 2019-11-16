@@ -1,7 +1,6 @@
 
 package soton.gdp31.database;
 
-import soton.gdp31.logger.Logging;
 import soton.gdp31.utils.DeviceObjectCache;
 import soton.gdp31.wrappers.PacketWrapper;
 
@@ -77,7 +76,6 @@ public class DBPacketHandler {
 
     private boolean updatePacketStats(PacketWrapper p, Connection c){
         try {
-            Logging.logInfoMessage("Updating device stats");
             String insert_query = "UPDATE device_stats SET packet_count = packet_count + 1, data_transferred = data_transferred + ? WHERE uuid = ?";
             PreparedStatement preparedStatement = c.prepareStatement(insert_query);
             preparedStatement.setInt(1, p.getPacketSize());
