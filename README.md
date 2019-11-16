@@ -6,7 +6,7 @@ This is the Java based backend for GDP Group 31.
 
 ## Installation
 
-The project *must* run bare-metal on a system, due to the need for direct access to the hosts network adaptors. This won't work in docker. Because of this, we rely on Docker only for the build and testing part of the project, and bash scripts for everything else. If you're running on Windows, you might need to use Bash for windows, or write a basic Bat script to get this running. 
+The project **must** run bare-metal on a system, due to the need for direct access to the hosts network adaptors. This won't work in docker. Because of this, we rely on Docker only for the build and testing part of the project, and bash scripts for everything else. If you're running on Windows, you might need to use Bash for windows, or write a basic Bat script to get this running. 
 
 ## Dependencies
 
@@ -19,7 +19,7 @@ To build the project, simply run `./bin/build.sh` from the project directory. Th
 
 #### Testing
 
-To run project tests, use the `./bin/test.sh` script, again running the project inside a docker container. This script *won't* leave any leftover files, so you'll need to re-run build if you then want to run the project.
+To run project tests, use the `./bin/test.sh` script, again running the project inside a docker container. This script **won't** leave any leftover files, so you'll need to re-run build if you then want to run the project.
 
 #### Running
 
