@@ -2,6 +2,7 @@
 import org.junit.jupiter.api.*;
 import org.pcap4j.core.PcapHandle;
 import org.pcap4j.core.Pcaps;
+import org.pcap4j.packet.EthernetPacket;
 import org.pcap4j.packet.Packet;
 import soton.gdp31.wrappers.PacketWrapper;
 import soton.gdp31.enums.ProtocolType;
@@ -28,7 +29,7 @@ class InterfaceTest {
     @Test
     public void validateInitialPacket() throws Exception {
         assertNotNull(ph);
-        Packet p = ph.getNextPacket();
+        EthernetPacket p = (EthernetPacket) ph.getNextPacket();
         assertNotNull(p);
 
         long currentTimeMills = System.currentTimeMillis();

@@ -6,7 +6,8 @@ import soton.gdp31.database.DBConnection;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.exceptions.InterfaceUnknownException;
 import soton.gdp31.logger.Logging;
-import soton.gdp31.threads.PacketThreadListener;
+import soton.gdp31.threads.PacketListenerThread;
+import soton.gdp31.threads.PacketProcessingThread;
 import soton.gdp31.utils.InterfaceUtils;
 
 public class Main {
@@ -22,7 +23,7 @@ public class Main {
     private PcapHandle handle;
     private PcapDumper dumper;
 
-    private PacketThreadListener thread;
+    private PacketListenerThread thread;
 
     public static void main(String[] args) {
         new Main();
@@ -35,7 +36,6 @@ public class Main {
         try {
             this.handle = InterfaceUtils.openInterface(interface_name);
             this.dumper = handle.dumpOpen(this.handle_dump_name);
-            new DBConnection();
         } catch (PcapNativeException e) {
             e.printStackTrace();
             System.exit(PCAP_ERROR_EXIT);
@@ -45,13 +45,15 @@ public class Main {
         } catch (NotOpenException e) {
             Logging.logErrorMessage("Failed to open handle.");
             e.printStackTrace();
-        } catch (DBConnectionClosedException e){
-            System.exit(DATABASE_CONNECTION_LOST_EXIT);
         }
 
         // Start our listening thread.
         Logging.logInfoMessage("Starting packet listner thread");
-        this.thread = new PacketThreadListener(handle, dumper);
+        this.thread = new PacketListenerThread(handle, dumper);
         this.thread.start();
+
+        PacketProcessingThread ppt = new PacketProcessingThread();
+        ppt.start();
+
     }
 }

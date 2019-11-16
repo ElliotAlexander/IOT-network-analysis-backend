@@ -1,17 +1,26 @@
 package soton.gdp31.wrappers;
 
 
-import org.pcap4j.packet.IpPacket;
-import org.pcap4j.packet.Packet;
-import org.pcap4j.packet.TcpPacket;
-import org.pcap4j.packet.UdpPacket;
+import org.apache.cassandra.utils.UUIDGen;
+import org.pcap4j.packet.*;
 import soton.gdp31.enums.ProtocolType;
 import soton.gdp31.exceptions.InvalidIPPacketException;
+import soton.gdp31.logger.Logging;
+import soton.gdp31.utils.UUIDGenerator;
+
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.security.NoSuchAlgorithmException;
 
 public class PacketWrapper {
 
     private boolean isIpPacket;
     private int srcPort, destPort;
+
+    private String hostname;
+
+    private boolean outgoing_traffic;
 
     private String srcIp;
     private String destIp;
@@ -27,10 +36,15 @@ public class PacketWrapper {
 
     private ProtocolType protocol_type;
 
-    public PacketWrapper(Packet p, long timestamp, long packet_count) throws InvalidIPPacketException {
+    private byte[] uuid;
+
+    public PacketWrapper(EthernetPacket p, long timestamp, long packet_count) throws InvalidIPPacketException {
 
         this.timestamp = timestamp;
         this.packet_count = packet_count;
+
+        src_mac_address = p.getHeader().getSrcAddr().toString();
+        dest_mac_address = p.getHeader().getDstAddr().toString();
 
         this.isIpPacket = p.contains(IpPacket.class);
         IpPacket ipPacket = p.get(IpPacket.class);
@@ -38,8 +52,38 @@ public class PacketWrapper {
         if(ipPacket == null) {
             throw new InvalidIPPacketException();
         }
-        this.srcIp = ipPacket.getHeader().getSrcAddr().getHostAddress().toString();
-        this.destIp = ipPacket.getHeader().getDstAddr().getHostAddress().toString();
+        this.srcIp = ipPacket.getHeader().getSrcAddr().getHostAddress();
+        this.destIp = ipPacket.getHeader().getDstAddr().getHostAddress();
+
+        try {
+            InetAddress IP = InetAddress.getLocalHost();
+            if(this.srcIp == InetAddress.getLocalHost().toString()){
+                System.out.println("Outgoing packet");
+            } else {
+                System.out.println(this.srcIp + " : " + Inet4Address.getLocalHost().getHostAddress());
+            }
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            this.uuid = UUIDGenerator.generateUUID(src_mac_address);
+            if(this.uuid == null){
+                Logging.logErrorMessage("Failed to generate UUID for packet.");
+                throw new NoSuchAlgorithmException();
+            }
+        } catch(NoSuchAlgorithmException e) {
+            Logging.logErrorMessage("Error initialising connections for device " + src_mac_address);
+            e.printStackTrace();
+        }
+
+        try {
+            InetAddress host = InetAddress.getByName(this.srcIp);
+            this.hostname = host.getHostName();
+        } catch (UnknownHostException e) {
+            Logging.logWarnMessage("Error resolving hostname for " + this.srcIp);
+        }
+
 
         String proto = ipPacket.getHeader().getProtocol().name();
         try {
@@ -86,6 +130,14 @@ public class PacketWrapper {
 
     public int getPacketSize() {
         return packetSize;
+    }
+
+    public String getHostname(){
+        return this.hostname;
+    }
+
+    public byte[] getUUID(){
+        return this.uuid;
     }
 
     public ProtocolType getProtocol_type() {
