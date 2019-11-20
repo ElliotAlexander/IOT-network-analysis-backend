@@ -13,6 +13,8 @@ The project requires you to configure the network interface to use when you firs
 
 Finding your network interface name on unix is relatively simple. 'ifconfig' in a shell prompt will list your network interfaces - you can find the correct one by identifying your IP address (for example, 192.168.1.xx, or 10.10.xx.xx on Eduroam). 
 
+![Example](https://imgur.com/a/kVhKfwv)
+
 ### Windows
 
 Windows makes finding the name of your true network interfaces difficult. To find your interfaces on Windows, run the project. The app will print out the names and IP addresses of every interface configured on your device - similar to how ifconfig works on Unix.
