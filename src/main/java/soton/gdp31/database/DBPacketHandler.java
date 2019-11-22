@@ -75,8 +75,13 @@ public class DBPacketHandler {
     }
 
     private boolean updatePacketStats(PacketWrapper p, Connection c){
+        String insert_query;
+        if(p.isHTTPS()) {
+            insert_query = "UPDATE device_stats SET packet_count = packet_count + 1, data_transferred = data_transferred + ? WHERE uuid = ?";
+        } else {
+            insert_query = "UPDATE device_stats SET packet_count = packet_count + 1, data_transferred = data_transferred + ?, https_packet_count = https_packet_count + 1  WHERE uuid = ?";
+        }
         try {
-            String insert_query = "UPDATE device_stats SET packet_count = packet_count + 1, data_transferred = data_transferred + ? WHERE uuid = ?";
             PreparedStatement preparedStatement = c.prepareStatement(insert_query);
             preparedStatement.setInt(1, p.getPacketSize());
             preparedStatement.setBytes(2, p.getUUID());
