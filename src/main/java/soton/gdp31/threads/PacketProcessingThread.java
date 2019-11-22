@@ -16,13 +16,13 @@ import java.util.concurrent.TimeoutException;
 
 public class PacketProcessingThread extends Thread {
 
-    private Connection connection;
-    private DBPacketHandler handler;
+    private DBConnection connection_handler;
+    private DBPacketHandler packet_handler;
 
     public PacketProcessingThread() {
         try {
-            this.connection = new DBConnection().getConnection();
-            this.handler = new DBPacketHandler();
+            this.connection_handler = new DBConnection();
+            this.packet_handler = new DBPacketHandler(connection_handler);
         } catch (DBConnectionClosedException e) {
             e.printStackTrace();
         }
@@ -33,7 +33,7 @@ public class PacketProcessingThread extends Thread {
         while(true) {
             if(!PacketProcessingQueue.instance.isEmpty()){
                 PacketWrapper p = PacketProcessingQueue.instance.pop();
-                handler.commitPacketToDatabase(p, connection);
+                packet_handler.commitPacketToDatabase(p);
             }
         }
     }

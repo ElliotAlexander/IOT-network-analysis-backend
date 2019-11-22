@@ -4,6 +4,8 @@ import org.pcap4j.core.PcapHandle;
 import org.pcap4j.core.Pcaps;
 import org.pcap4j.packet.EthernetPacket;
 import org.pcap4j.packet.Packet;
+import soton.gdp31.Main;
+import soton.gdp31.utils.NetworkUtils.NetworkIdentification;
 import soton.gdp31.wrappers.PacketWrapper;
 import soton.gdp31.enums.ProtocolType;
 
@@ -24,6 +26,9 @@ class InterfaceTest {
     @BeforeEach
     public void setupPcapHandle() throws Exception {
         ph = Pcaps.openOffline("src/test/resources/example.pcap");
+        Main.SYSTEM_IP = NetworkIdentification.getSystemIp();
+        Main.SUBNET_MASK = NetworkIdentification.getNetworkMask();
+        Main.GATEWAY_IP = NetworkIdentification.getGatewayIP();
     }
 
     @Test

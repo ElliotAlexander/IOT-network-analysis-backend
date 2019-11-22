@@ -12,12 +12,14 @@ import java.sql.SQLException;
 public class DBConnection {
 
     protected Connection connection;
+    protected boolean connection_down;
 
     public DBConnection() throws DBConnectionClosedException {
         try{
             Class.forName("org.postgresql.Driver");
             this.connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/postgres", "postgres", "tallest-tree");
             Logging.logInfoMessage("Database connected.");
+            this.connection_down = false;
             new DatabaseMonitor().start();
         } catch(ClassNotFoundException e1){
             Logging.logErrorMessage("Database connection failed. ");
@@ -71,6 +73,7 @@ public class DBConnection {
                     } catch (SQLException e) {
                         int retries = 1;
                         connection = null;
+                        connection_down = true;
                         while (connection == null) {
                             Logging.logInfoMessage("Attempting to reconnect to database.");
                             try {
@@ -80,6 +83,7 @@ public class DBConnection {
                                 Logging.logInfoMessage("Reconnected!");
                                 // Reset retries - in case we lose connection again.
                                 retries = 1;
+                                connection_down = false;
                                 break;
                             } catch (ClassNotFoundException | SQLException ex) {
                                 Logging.logWarnMessage("Reconnection failed. Retrying in five seconds. " + retries + " / " + RETRY_CAP);

@@ -3,14 +3,16 @@ package soton.gdp31.wrappers;
 
 import org.apache.cassandra.utils.UUIDGen;
 import org.pcap4j.packet.*;
+import soton.gdp31.Main;
+import soton.gdp31.cache.DeviceHostnameCache;
 import soton.gdp31.enums.ProtocolType;
 import soton.gdp31.exceptions.InvalidIPPacketException;
 import soton.gdp31.logger.Logging;
+import soton.gdp31.utils.NetworkUtils.HostnameFetcher;
+import soton.gdp31.utils.NetworkUtils.NetworkIdentification;
 import soton.gdp31.utils.UUIDGenerator;
 
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.security.NoSuchAlgorithmException;
 
 public class PacketWrapper {
@@ -18,12 +20,13 @@ public class PacketWrapper {
     private boolean isIpPacket;
     private int srcPort, destPort;
 
-    private String hostname;
+    private String src_hostname;
+    private String dest_hostname;
 
-    private boolean outgoing_traffic;
+    private boolean is_outgoing_traffic;
 
-    private String srcIp;
-    private String destIp;
+    private String src_ip;
+    private String dest_ip;
 
     private boolean isHTTPS;
     private int packetSize;
@@ -52,19 +55,9 @@ public class PacketWrapper {
         if(ipPacket == null) {
             throw new InvalidIPPacketException();
         }
-        this.srcIp = ipPacket.getHeader().getSrcAddr().getHostAddress();
-        this.destIp = ipPacket.getHeader().getDstAddr().getHostAddress();
-
-        try {
-            InetAddress IP = InetAddress.getLocalHost();
-            if(this.srcIp == InetAddress.getLocalHost().toString()){
-                System.out.println("Outgoing packet");
-            } else {
-                System.out.println(this.srcIp + " : " + Inet4Address.getLocalHost().getHostAddress());
-            }
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
+        this.src_ip = ipPacket.getHeader().getSrcAddr().getHostAddress();
+        this.dest_ip = ipPacket.getHeader().getDstAddr().getHostAddress();
+        this.is_outgoing_traffic = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getSrcAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
 
         try {
             this.uuid = UUIDGenerator.generateUUID(src_mac_address);
@@ -77,12 +70,16 @@ public class PacketWrapper {
             e.printStackTrace();
         }
 
-        try {
-            InetAddress host = InetAddress.getByName(this.srcIp);
-            this.hostname = host.getHostName();
-        } catch (UnknownHostException e) {
-            Logging.logWarnMessage("Error resolving hostname for " + this.srcIp);
+        src_hostname = DeviceHostnameCache.instance.checkHostname(ipPacket.getHeader().getSrcAddr().getAddress(), !is_outgoing_traffic);
+        if( src_hostname == ""){
+            src_hostname = HostnameFetcher.fetchHostname(src_ip);
         }
+
+        dest_hostname = DeviceHostnameCache.instance.checkHostname(ipPacket.getHeader().getDstAddr().getAddress(), !is_outgoing_traffic);
+        if( dest_hostname == ""){
+            dest_hostname = HostnameFetcher.fetchHostname(src_ip);
+        }
+
 
 
         String proto = ipPacket.getHeader().getProtocol().name();
@@ -112,16 +109,20 @@ public class PacketWrapper {
             this.packetSize = p.length();
     }
 
+    public boolean isOutgoingTraffic(){
+        return this.is_outgoing_traffic;
+    }
+
     public boolean isIpPacket() {
         return isIpPacket;
     }
 
     public String getSrcIp() {
-        return srcIp;
+        return src_ip;
     }
 
     public String getDestIp() {
-        return destIp;
+        return dest_ip;
     }
 
     public boolean isHTTPS() {
@@ -132,8 +133,12 @@ public class PacketWrapper {
         return packetSize;
     }
 
-    public String getHostname(){
-        return this.hostname;
+    public String getSrcHostname(){
+        return this.src_hostname;
+    }
+
+    public String getDestHostname(){
+        return this.dest_hostname;
     }
 
     public byte[] getUUID(){
