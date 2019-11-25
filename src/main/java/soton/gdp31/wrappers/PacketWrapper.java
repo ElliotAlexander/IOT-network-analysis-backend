@@ -1,20 +1,32 @@
 package soton.gdp31.wrappers;
 
 
-import org.pcap4j.packet.IpPacket;
-import org.pcap4j.packet.Packet;
-import org.pcap4j.packet.TcpPacket;
-import org.pcap4j.packet.UdpPacket;
+import org.apache.cassandra.utils.UUIDGen;
+import org.pcap4j.packet.*;
+import soton.gdp31.Main;
+import soton.gdp31.cache.DeviceHostnameCache;
 import soton.gdp31.enums.ProtocolType;
 import soton.gdp31.exceptions.InvalidIPPacketException;
+import soton.gdp31.logger.Logging;
+import soton.gdp31.utils.NetworkUtils.HostnameFetcher;
+import soton.gdp31.utils.NetworkUtils.NetworkIdentification;
+import soton.gdp31.utils.UUIDGenerator;
+
+import java.net.*;
+import java.security.NoSuchAlgorithmException;
 
 public class PacketWrapper {
 
     private boolean isIpPacket;
     private int srcPort, destPort;
 
-    private String srcIp;
-    private String destIp;
+    private String src_hostname;
+    private String dest_hostname;
+
+    private boolean is_outgoing_traffic;
+
+    private String src_ip;
+    private String dest_ip;
 
     private boolean isHTTPS;
     private int packetSize;
@@ -27,10 +39,15 @@ public class PacketWrapper {
 
     private ProtocolType protocol_type;
 
-    public PacketWrapper(Packet p, long timestamp, long packet_count) throws InvalidIPPacketException {
+    private byte[] uuid;
+
+    public PacketWrapper(EthernetPacket p, long timestamp, long packet_count) throws InvalidIPPacketException {
 
         this.timestamp = timestamp;
         this.packet_count = packet_count;
+
+        src_mac_address = p.getHeader().getSrcAddr().toString();
+        dest_mac_address = p.getHeader().getDstAddr().toString();
 
         this.isIpPacket = p.contains(IpPacket.class);
         IpPacket ipPacket = p.get(IpPacket.class);
@@ -38,8 +55,32 @@ public class PacketWrapper {
         if(ipPacket == null) {
             throw new InvalidIPPacketException();
         }
-        this.srcIp = ipPacket.getHeader().getSrcAddr().getHostAddress().toString();
-        this.destIp = ipPacket.getHeader().getDstAddr().getHostAddress().toString();
+        this.src_ip = ipPacket.getHeader().getSrcAddr().getHostAddress();
+        this.dest_ip = ipPacket.getHeader().getDstAddr().getHostAddress();
+        this.is_outgoing_traffic = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getSrcAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
+
+        try {
+            this.uuid = UUIDGenerator.generateUUID(src_mac_address);
+            if(this.uuid == null){
+                Logging.logErrorMessage("Failed to generate UUID for packet.");
+                throw new NoSuchAlgorithmException();
+            }
+        } catch(NoSuchAlgorithmException e) {
+            Logging.logErrorMessage("Error initialising connections for device " + src_mac_address);
+            e.printStackTrace();
+        }
+
+        src_hostname = DeviceHostnameCache.instance.checkHostname(ipPacket.getHeader().getSrcAddr().getAddress(), !is_outgoing_traffic);
+        if( src_hostname == ""){
+            src_hostname = HostnameFetcher.fetchHostname(src_ip);
+        }
+
+        dest_hostname = DeviceHostnameCache.instance.checkHostname(ipPacket.getHeader().getDstAddr().getAddress(), !is_outgoing_traffic);
+        if( dest_hostname == ""){
+            dest_hostname = HostnameFetcher.fetchHostname(src_ip);
+        }
+
+
 
         String proto = ipPacket.getHeader().getProtocol().name();
         try {
@@ -68,16 +109,20 @@ public class PacketWrapper {
             this.packetSize = p.length();
     }
 
+    public boolean isOutgoingTraffic(){
+        return this.is_outgoing_traffic;
+    }
+
     public boolean isIpPacket() {
         return isIpPacket;
     }
 
     public String getSrcIp() {
-        return srcIp;
+        return src_ip;
     }
 
     public String getDestIp() {
-        return destIp;
+        return dest_ip;
     }
 
     public boolean isHTTPS() {
@@ -86,6 +131,18 @@ public class PacketWrapper {
 
     public int getPacketSize() {
         return packetSize;
+    }
+
+    public String getSrcHostname(){
+        return this.src_hostname;
+    }
+
+    public String getDestHostname(){
+        return this.dest_hostname;
+    }
+
+    public byte[] getUUID(){
+        return this.uuid;
     }
 
     public ProtocolType getProtocol_type() {

@@ -3,12 +3,14 @@ version: '3.3'
 services:
    build:
       image: zenika/alpine-maven
+      container_name: gdp-backend-build
       volumes:
         - $PWD:/app
       build: 
          context: .
    test:
       image: zenika/alpine-maven
+      container_name: gdp-backend-test
       volumes:
          - $PWD:/app
       working_dir: /app

@@ -1,4 +1,4 @@
-package soton.gdp31.utils;
+package soton.gdp31.utils.NetworkUtils;
 
 import org.pcap4j.core.PcapHandle;
 import org.pcap4j.core.PcapNativeException;
