@@ -199,6 +199,8 @@ import java.util.*;
                     outcome.addResult(i, aResult);
                 }
                 break;
+            default:
+                Logging.logErrorMessage("PORTSCANNER: Incorrect scan range input.");
          }
 
          return outcome;
