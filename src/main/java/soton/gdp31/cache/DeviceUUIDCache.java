@@ -65,7 +65,7 @@ public class DeviceUUIDCache {
     // Check if a device exists in the databsae.
     // @param byte[] uuid - The UUID of the device (a hash of the mac address).
     // @param Connection c - An open connection object.
-    public boolean checkDeviceExists(byte[] uuid){
+    public boolean checkDeviceExists(byte[] uuid, String tableName){
             if(device_seen_cache.containsKey(uuid)){
                 if(device_seen_cache.get(uuid) < (System.currentTimeMillis() - CACHE_TIMEOUT)){
                     device_seen_cache.remove(uuid);
@@ -73,7 +73,7 @@ public class DeviceUUIDCache {
                 return true;
             } else {
                 // Does the device exist?
-                String query = "SELECT uuid FROM devices WHERE uuid = ? UNION SELECT uuid FROM device_stats WHERE uuid = ?";
+                String query = "SELECT uuid FROM devices WHERE uuid = ? UNION SELECT uuid FROM " + tableName +" WHERE uuid = ?";
                 try {
                     PreparedStatement ps = database_connection_handler.getConnection().prepareStatement(query);
                     ps.setBytes(1, uuid);
@@ -93,6 +93,7 @@ public class DeviceUUIDCache {
                 }
             }
     }
+
 
     public boolean addDevice(String mac_address){
         try {

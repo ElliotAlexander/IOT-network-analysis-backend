@@ -23,7 +23,7 @@ public class DBPacketHandler {
     public void commitPacketToDatabase(PacketWrapper p) {
         // Does the device exist in the database?
         // Having a cache allows us to know this without checking the database
-        if(DeviceUUIDCache.DeviceObjectCacheInstance(database_connection_handler).checkDeviceExists(p.getUUID())) {
+        if(DeviceUUIDCache.DeviceObjectCacheInstance(database_connection_handler).checkDeviceExists(p.getUUID(), "device_stats")) {
             updateDeviceTimestamp(p);
             updatePacketStats(p);
         } else {    /// Device doesn't exist

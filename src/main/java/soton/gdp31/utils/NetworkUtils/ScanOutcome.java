@@ -1,5 +1,6 @@
 package soton.gdp31.utils.NetworkUtils;
 
+import java.lang.reflect.Array;
 import java.util.*;
 
 public class ScanOutcome {
@@ -12,23 +13,46 @@ public class ScanOutcome {
     /**
      * Variable initalisation
      */
-    private Map<Integer, Boolean> ports; // Port number, Active Service
+    private byte[] uuid;
+    private int[] tcp_ports; // List of port numbers, where an open TCP service is.
+    private int[] udp_ports; // List of port numbers, where an open UDP service is.
     private String targetAddress;
+    private long timeOfScan; // TODO: Add implementation to get time during scan.
 
     public ScanOutcome() {
-        ports = new HashMap<Integer, Boolean>();
+        targetAddress = "";
+    }
+
+    public ScanOutcome(byte[] uuid) {
+        this.uuid = uuid;
         targetAddress = "";
     }
 
     /**
      * Getters & Setters
      */
-    public void setPorts(Map<Integer, Boolean> ports) {
-        this.ports = ports;
+    public void setUUID(byte[] uuid) {
+        this.uuid = uuid;
     }
 
-    public Map<Integer, Boolean> getPorts(){
-        return ports;
+    public byte[] getUUID(){
+        return uuid;
+    }
+    
+    public void setTCPPorts(int[] ports) {
+        this.tcp_ports = ports;
+    }
+
+    public int[] getTCPPorts(){
+        return tcp_ports;
+    }
+
+    public void setUDPPorts(int[] ports) {
+        this.udp_ports = ports;
+    }
+
+    public List<Integer> getUDPPorts() {
+        return udp_ports;
     }
 
     public void setAddress(String targetAddr) {
@@ -39,18 +63,43 @@ public class ScanOutcome {
         return targetAddress;
     }
 
+    public void setTimeOfScan(long timeOfScan) {
+        this.timeOfScan = timeOfScan;
+    }
+
+    public long getTimeOfScan() {
+        return timeOfScan;
+    }
+
     /**
      * Helpers
      */
-    public void addResult(Integer port, Boolean open) {
-        ports.put(port, open);
+    public void addTCPResult(Integer port, Boolean open) {
+        tcp_ports.
     }
 
-    public Boolean getResult(Integer port){
-        return ports.get(port);
+    public Boolean getTCPResult(Integer port){
+        return tcp_ports.get(port);
     }
 
-    public void clearResults() {
-        ports.clear();
+    public void addUDPResult(Integer port, Boolean open) {
+        udp_ports.put(port, open);
+    }
+
+    public Boolean getUDPResult(Integer port){
+        return udp_ports.get(port);
+    }
+
+    public void clearAllResults() {
+        tcp_ports.clear();
+        udp_ports.clear();
+    }
+
+    public void clearTCPResults() {
+        tcp_ports.clear();
+    }
+
+    public void clearUDPResults() {
+        udp_ports.clear();
     }
 }
