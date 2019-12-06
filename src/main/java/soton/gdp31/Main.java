@@ -28,8 +28,6 @@ public class Main {
     public static final String interface_name = "en0";
     public static final String handle_dump_name = "out.pcap";
 
-
-
     public static void main(String[] args) {
         new Main();
     }

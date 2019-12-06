@@ -1,8 +1,11 @@
 
 package soton.gdp31.database;
 
+import soton.gdp31.cache.DeviceUpdateCache;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.cache.DeviceUUIDCache;
+import soton.gdp31.exceptions.database.DBUknownDeviceException;
+import soton.gdp31.wrappers.DeviceWrapper;
 import soton.gdp31.wrappers.PacketWrapper;
 
 import java.sql.*;
@@ -12,10 +15,12 @@ import java.time.ZonedDateTime;
 public class DBPacketHandler {
 
     private final DBConnection database_connection_handler;
+    private final DeviceUpdateCache deviceUpdateCache;
     private Connection c;
 
     public DBPacketHandler(DBConnection database_connection_handler) throws DBConnectionClosedException {
         this.database_connection_handler = database_connection_handler;
+        this.deviceUpdateCache = new DeviceUpdateCache();
         this.c = database_connection_handler.getConnection();
     }
 
@@ -25,13 +30,10 @@ public class DBPacketHandler {
         // Having a cache allows us to know this without checking the database
         if(DeviceUUIDCache.DeviceObjectCacheInstance(database_connection_handler).checkDeviceExists(p.getUUID())) {
             updateDeviceTimestamp(p);
-            updatePacketStats(p);
         } else {    /// Device doesn't exist
             addDeviceToDatabase(p);
         }
     }
-
-
 
     private void updateDeviceTimestamp(PacketWrapper p){
         try {
@@ -82,25 +84,21 @@ public class DBPacketHandler {
         }
     }
 
-    private void updatePacketStats(PacketWrapper p){
-        String insert_query = "UPDATE device_stats SET packet_count = packet_count + 1, data_transferred = data_transferred + ?";
-        String isHTTPSUpdate = ",https_packet_count = https_packet_count + 1 ";
-        String isOutgoingPacket = ",data_out = data_out + ? ";
-        String isIncomingPacket = ",data_in = data_in + ? ";
-        if(p.isHTTPS())
-            insert_query += isHTTPSUpdate;
-
-        insert_query += (p.isOutgoingTraffic() ? isOutgoingPacket : isIncomingPacket);
-        insert_query += " WHERE uuid = ?";
-
+    public void updateDeviceStats(DeviceWrapper device_wrapper, long timestamp){
+        String insert_query = "INSERT INTO packet_counts_over_time(uuid, timestamp, packet_count, https_packet_count) VALUES(?,?,?,?)";
         try {
             PreparedStatement preparedStatement = c.prepareStatement(insert_query);
-            preparedStatement.setInt(1, p.getPacketSize());
-            preparedStatement.setInt(2, p.getPacketSize());
-            preparedStatement.setBytes(3, p.getUUID());
+            preparedStatement.setBytes(1, device_wrapper.getUUID());
+            preparedStatement.setTimestamp(2, new Timestamp(
+                    timestamp
+            ));
+            preparedStatement.setLong(3, device_wrapper.getPacketCount());
+            preparedStatement.setLong(4, device_wrapper.getPacketCount());
             preparedStatement.executeUpdate();
         } catch (SQLException e){
             new DBExceptionHandler(e, database_connection_handler);
         }
     }
+
+
 }

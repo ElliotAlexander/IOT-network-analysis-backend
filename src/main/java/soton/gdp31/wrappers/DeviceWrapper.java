@@ -1,5 +1,7 @@
 package soton.gdp31.wrappers;
 
+import soton.gdp31.database.DBConnection;
+import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.exceptions.database.DBUknownDeviceException;
 
 import java.security.MessageDigest;
@@ -8,33 +10,33 @@ import java.sql.*;
 
 public class DeviceWrapper {
 
-    private final Connection connection;
-    private byte uuid[];
+    private Connection c;
+    private byte[] uuid;
 
-    public DeviceWrapper(Connection connection, String device_name){
-        this.connection = connection;
-        try {
-            this.uuid = MessageDigest.getInstance("MD5").digest(device_name.getBytes());
-        } catch (NoSuchAlgorithmException e){
+    private int packet_count = 0;
+    private int https_packet_count = 0;
 
-        }
+    public DeviceWrapper(byte[] uuid){
+        this.uuid = uuid;
     }
 
+    public byte[] getUUID() {
+        return uuid;
+    }
 
-    public byte[] getUUID() throws DBUknownDeviceException {
-        try {
-            String stmt_sql = "SELECT ? FROM devices WHERE uuid=?";
-            PreparedStatement stmt = connection.prepareStatement(stmt_sql);
-            stmt.setBytes(1, uuid);
-            stmt.setBytes(2, uuid);
-            ResultSet rs = stmt.executeQuery();
-            if(rs.wasNull()){
-                throw new SQLException();
-            } else {
-                return this.uuid;
-            }
-        } catch(SQLException e){
-            throw new DBUknownDeviceException();
-        }
+    public int getHttpsPacketCount() {
+        return https_packet_count;
+    }
+
+    public void setHttpsPacketCount(int https_packet_count_new) {
+        this.https_packet_count = https_packet_count_new;
+    }
+
+    public int getPacketCount() {
+        return packet_count;
+    }
+
+    public void setPacketCount(int packet_count_new) {
+        this.packet_count = packet_count_new;
     }
 }
