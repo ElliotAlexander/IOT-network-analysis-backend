@@ -4,7 +4,6 @@ import soton.gdp31.cache.DeviceUpdateCache;
 import soton.gdp31.database.DBConnection;
 import soton.gdp31.database.DBPacketHandler;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
-import soton.gdp31.exceptions.devices.UnknownDeviceException;
 import soton.gdp31.manager.DeviceListManager;
 import soton.gdp31.utils.PacketProcessingQueue;
 import soton.gdp31.wrappers.DeviceWrapper;
@@ -38,21 +37,19 @@ public class PacketProcessingThread extends Thread {
 
                 PacketWrapper p = PacketProcessingQueue.instance.pop();
                 if(deviceListManager.checkDevice(p.getUUID())){
-                    try {
                         deviceListManager.updateStats(p);
                         DeviceWrapper deviceWrapper = deviceListManager.getDevice(p.getUUID());
                         if(timestamp_update_cache.checkDevice(p.getUUID())){
+                            // Has it been more than ten seconds since the lsat update?
                             if(timestamp_update_cache.getDevice(p.getUUID()) < timestamp - 10000){
                                packet_handler.updateDeviceStats(deviceWrapper, timestamp);
+                               timestamp_update_cache.updateDevice(p.getUUID(), timestamp);
                             }
                         } else {
                             packet_handler.updateDeviceStats(deviceWrapper, timestamp);
                             timestamp_update_cache.addDevice(p.getUUID(), timestamp);
                         }
                         packet_handler.commitPacketToDatabase(p);
-                    } catch (UnknownDeviceException e) {
-                        e.printStackTrace();
-                    }
                 } else {
                     DeviceWrapper device = deviceListManager.addDevice(p.getUUID());
                     packet_handler.commitPacketToDatabase(p);

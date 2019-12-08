@@ -31,4 +31,8 @@ public class DeviceUpdateCache {
         device_last_seen_cache.put(uuid, timestamp);
         return true;
     }
+
+    public void updateDevice(byte[] uuid, long timestamp){
+        device_last_seen_cache.put(uuid, timestamp);
+    }
 }
