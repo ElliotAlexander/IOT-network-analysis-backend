@@ -73,7 +73,6 @@ public class NetworkIdentification {
                 if ((a1[i] & networkMask[i]) != (a2[i] & networkMask[i]))
                     return false;
         } catch (Exception e){
-            Logging.logWarnMessage("Error comparing IP subnets.");
             return false;
         }
 
