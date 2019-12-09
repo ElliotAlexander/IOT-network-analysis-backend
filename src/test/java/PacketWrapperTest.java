@@ -47,8 +47,9 @@ public class PacketWrapperTest {
 
     @Test
     public void assertIpSolicitation() {
-        assert wrapper.getSrcIp() == "127.0.0.1";
-        assert wrapper.getDestIp() == "127.0.0.1";
+        System.out.println("IP: " + wrapper.getSrcIp());
+        assert wrapper.getSrcIp().equals("127.0.0.1");
+        assert wrapper.getDestIp().equals("127.0.0.1");
 
     }
 }
