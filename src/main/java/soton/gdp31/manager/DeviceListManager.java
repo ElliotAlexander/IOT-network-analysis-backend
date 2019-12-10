@@ -1,5 +1,6 @@
 package soton.gdp31.manager;
 
+import soton.gdp31.cache.DeviceUpdateCache;
 import soton.gdp31.database.DBConnection;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.wrappers.DeviceWrapper;
@@ -13,14 +14,36 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
+/**
+ * @Author Elliot Alexander
+ *
+ * DeviceListManager is responsible for managing in-memory representations of devices while the packet listener is running
+ * Ths idea behind this is to minimize database operations - an in memory representation allows us to track recent
+ * updates in real time, and only update the database when necessary.
+ *
+ *
+ * This class works in close conjunction with DeviceWrapper.
+ *
+ */
 public class DeviceListManager {
 
     private ArrayList<DeviceWrapper> device_list;
     private Connection c;
 
+    /**
+     *
+     *
+     * Constructor reloads previously seen device timestamps from the database
+     * This allows us to 'carry on where we left off' when restarting.
+     * @param db_connection_wrapper
+     */
     public DeviceListManager(DBConnection db_connection_wrapper){
         device_list = new ArrayList<>();
-        String query = "SELECT uuid,packet_count,https_packet_count FROM packet_counts_over_time;";
+        String query = "SELECT m.uuid, m.packet_count, m.https_packet_count, t.mx FROM ( " +
+                "SELECT uuid, MAX(timestamp) AS mx " +
+                "FROM packet_counts_over_time " +
+                "GROUP BY uuid" +
+            ") t JOIN packet_counts_over_time m ON m.uuid = t.uuid AND t.mx = m.timestamp;";
         try {
             this.c = db_connection_wrapper.getConnection();
             PreparedStatement preparedStatement = c.prepareStatement(query);
@@ -51,6 +74,7 @@ public class DeviceListManager {
 
     public DeviceWrapper addDevice(byte[] uuid){
         DeviceWrapper w = new DeviceWrapper(uuid);
+        w.setLastUpdateTime(System.currentTimeMillis());
         device_list.add(w);
         return w;
     }

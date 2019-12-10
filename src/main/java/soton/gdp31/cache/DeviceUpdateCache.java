@@ -1,10 +1,9 @@
 package soton.gdp31.cache;
 
 
-import soton.gdp31.database.DBConnection;
-
-import java.sql.Connection;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @Author Elliot Alexander
@@ -20,11 +19,21 @@ public class DeviceUpdateCache {
     }
 
     public boolean checkDevice(byte[] uuid) {
-        return device_last_seen_cache.containsKey(uuid);
+        for(byte[] key : device_last_seen_cache.keySet()){
+            if(Arrays.equals(uuid, key)){
+                return true;
+            }
+        }
+        return false;
     }
 
     public long getDevice(byte[] uuid){
-        return device_last_seen_cache.get(uuid);
+        for(byte[] key: device_last_seen_cache.keySet()){
+            if(Arrays.equals(key, uuid)){
+                return device_last_seen_cache.get(key);
+            }
+        }
+        return 0;
     }
 
     public boolean addDevice(byte[] uuid, long timestamp){

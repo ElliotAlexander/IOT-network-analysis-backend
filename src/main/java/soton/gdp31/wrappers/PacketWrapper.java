@@ -76,7 +76,11 @@ public class PacketWrapper {
         }
 
         try {
-            this.uuid = UUIDGenerator.generateUUID(src_mac_address);
+            if(this.is_outgoing_traffic){
+                this.uuid = UUIDGenerator.generateUUID(dest_mac_address);
+            } else {
+                this.uuid = UUIDGenerator.generateUUID(src_mac_address);
+            }
             if(this.uuid == null){
                 Logging.logErrorMessage("Failed to generate UUID for packet.");
                 throw new NoSuchAlgorithmException();

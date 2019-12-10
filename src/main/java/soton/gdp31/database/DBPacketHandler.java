@@ -28,14 +28,12 @@ public class DBPacketHandler {
     public void commitPacketToDatabase(PacketWrapper p) {
         // Does the device exist in the database?
         // Having a cache allows us to know this without checking the database
-        if(DeviceUUIDCache.DeviceObjectCacheInstance(database_connection_handler).checkDeviceExists(p.getUUID())) {
-            updateDeviceTimestamp(p);
-        } else {    /// Device doesn't exist
+        if(!DeviceUUIDCache.DeviceObjectCacheInstance(database_connection_handler).checkDeviceExists(p.getUUID())) {
             addDeviceToDatabase(p);
         }
     }
 
-    private void updateDeviceTimestamp(PacketWrapper p){
+    public void updateDeviceTimestamp(PacketWrapper p){
         try {
             String update_query = "UPDATE devices SET last_seen = ? WHERE uuid = ?";
             PreparedStatement preparedStatement = c.prepareStatement(update_query);

@@ -16,6 +16,8 @@ public class DeviceWrapper {
     private int packet_count = 0;
     private int https_packet_count = 0;
 
+    private long last_update_time = -1;
+
     public DeviceWrapper(byte[] uuid){
         this.uuid = uuid;
     }
@@ -38,5 +40,13 @@ public class DeviceWrapper {
 
     public void setPacketCount(int packet_count_new) {
         this.packet_count = packet_count_new;
+    }
+
+    public long getLastUpdateTime() {
+        return last_update_time;
+    }
+
+    public void setLastUpdateTime(long last_update_time) {
+        this.last_update_time = last_update_time;
     }
 }

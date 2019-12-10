@@ -13,7 +13,6 @@ public class PacketProcessingThread extends Thread {
 
     private DBConnection connection_handler;
     private DBPacketHandler packet_handler;
-    private DeviceUpdateCache timestamp_update_cache;
     private DeviceListManager deviceListManager;
 
     public PacketProcessingThread() {
@@ -21,7 +20,6 @@ public class PacketProcessingThread extends Thread {
             this.connection_handler = new DBConnection();
             this.deviceListManager = new DeviceListManager(connection_handler);
             this.packet_handler = new DBPacketHandler(connection_handler);
-            this.timestamp_update_cache = new DeviceUpdateCache();
         } catch (DBConnectionClosedException e) {
             e.printStackTrace();
         }
@@ -32,32 +30,30 @@ public class PacketProcessingThread extends Thread {
         while(true) {
 
             if(!PacketProcessingQueue.instance.isEmpty()){
-
-                long timestamp = System.currentTimeMillis();
-
                 PacketWrapper p = PacketProcessingQueue.instance.pop();
-                if(deviceListManager.checkDevice(p.getUUID())){
-                        deviceListManager.updateStats(p);
-                        DeviceWrapper deviceWrapper = deviceListManager.getDevice(p.getUUID());
-                        if(timestamp_update_cache.checkDevice(p.getUUID())){
-                            // Has it been more than ten seconds since the lsat update?
-                            if(timestamp_update_cache.getDevice(p.getUUID()) < timestamp - 10000){
-                               packet_handler.updateDeviceStats(deviceWrapper, timestamp);
-                               timestamp_update_cache.updateDevice(p.getUUID(), timestamp);
-                            }
-                        } else {
-                            packet_handler.updateDeviceStats(deviceWrapper, timestamp);
-                            timestamp_update_cache.addDevice(p.getUUID(), timestamp);
-                        }
-                        packet_handler.commitPacketToDatabase(p);
-                } else {
-                    DeviceWrapper device = deviceListManager.addDevice(p.getUUID());
-                    packet_handler.commitPacketToDatabase(p);
-                    packet_handler.updateDeviceStats(device, timestamp);
-                    timestamp_update_cache.addDevice(p.getUUID(), timestamp);
+                packet_handler.commitPacketToDatabase(p);
 
+                if(deviceListManager.checkDevice(p.getUUID())) {
+                    DeviceWrapper deviceWrapper = deviceListManager.getDevice(p.getUUID());
+                    if (p.isHTTPS()) {
+                        deviceWrapper.setHttpsPacketCount(deviceWrapper.getHttpsPacketCount() + 1);
+                    }
+
+
+                    deviceWrapper.setPacketCount(deviceWrapper.getPacketCount() + 1);
+                    if (System.currentTimeMillis() - deviceWrapper.getLastUpdateTime() > 10000) {
+                        System.out.println("Updating device " + p.getUUID());
+                        deviceWrapper.setLastUpdateTime(System.currentTimeMillis());
+                        packet_handler.updateDeviceTimestamp(p);
+                        packet_handler.updateDeviceStats(deviceWrapper, System.currentTimeMillis());
+                    }
+                } else{
+                    System.out.println("Found new device " + p.getUUID());
+                        DeviceWrapper device = deviceListManager.addDevice(p.getUUID());
+                        packet_handler.commitPacketToDatabase(p);
+                        packet_handler.updateDeviceStats(device, System.currentTimeMillis());
+                    }
                 }
-            }
         }
     }
 }
