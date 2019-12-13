@@ -49,6 +49,5 @@ class InterfaceTest {
         assertEquals(pw.getDestIp(), "2.1.1.1");
         assertEquals(pw.getSrcIp(), "2.1.1.2");
         assertEquals(pw.getProtocol_type(), ProtocolType.UNKNOWN);
-
     }
 }

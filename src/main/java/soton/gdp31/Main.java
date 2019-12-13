@@ -12,6 +12,7 @@ import soton.gdp31.utils.NetworkUtils.NetworkIdentification;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.lang.reflect.Constructor;
@@ -27,8 +28,6 @@ public class Main {
 
     public static final String interface_name = "en0";
     public static final String handle_dump_name = "out.pcap";
-
-
 
     public static void main(String[] args) {
         new Main();
@@ -62,7 +61,9 @@ public class Main {
         PacketProcessingThread ppt = new PacketProcessingThread();
         ppt.start();
 
-        Thread threadPool[] = { ppt, plt };
+        ArrayList<Thread> threadPool = new ArrayList<Thread>();
+        threadPool.add(ppt);
+        threadPool.add(plt);
         while(true){
             for(Thread t : threadPool){
                 if(!t.isAlive() || t == null){
@@ -72,9 +73,11 @@ public class Main {
                         Constructor<?> ctor = clazz.getConstructor();
                         Object object = ctor.newInstance(new Object[] {});
                         Thread tNew = (Thread) object;
-                        t = tNew;
-                        t.start();
+                        tNew.start();
+                        threadPool.remove(t);
+                        threadPool.add(tNew);
                         Logging.logInfoMessage("Successfully restarted thread.");
+                        continue;
                     } catch (ClassNotFoundException | NoSuchMethodException e) {
                         e.printStackTrace();
                     } catch (IllegalAccessException e) {

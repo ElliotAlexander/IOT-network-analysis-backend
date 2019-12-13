@@ -59,6 +59,9 @@ public class PacketListenerThread extends Thread {
                 handle.close();
             } catch (InvalidIPPacketException e){
                 continue;
+            } catch (ClassCastException e){
+                e.printStackTrace();
+                Logging.logErrorMessage("Skipping non-ethernet packet");
             }
         }
     }

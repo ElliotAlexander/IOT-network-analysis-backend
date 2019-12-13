@@ -24,6 +24,7 @@ public class PacketWrapper {
     private String dest_hostname;
 
     private boolean is_outgoing_traffic;
+    private boolean is_internal_traffic;
 
     private String src_ip;
     private String dest_ip;
@@ -57,10 +58,29 @@ public class PacketWrapper {
         }
         this.src_ip = ipPacket.getHeader().getSrcAddr().getHostAddress();
         this.dest_ip = ipPacket.getHeader().getDstAddr().getHostAddress();
-        this.is_outgoing_traffic = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getSrcAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
+
+        boolean src_is_internal = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getSrcAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
+        boolean dest_is_internal = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getDstAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
+
+
+        if(dest_is_internal && src_is_internal || dest_is_internal || src_is_internal) {
+            this.is_internal_traffic = true;
+        } else {
+            this.is_internal_traffic = false;
+        }
+
+        if(src_is_internal){
+            this.is_outgoing_traffic = true;
+        } else {
+            this.is_outgoing_traffic = false;
+        }
 
         try {
-            this.uuid = UUIDGenerator.generateUUID(src_mac_address);
+            if(this.is_outgoing_traffic){
+                this.uuid = UUIDGenerator.generateUUID(dest_mac_address);
+            } else {
+                this.uuid = UUIDGenerator.generateUUID(src_mac_address);
+            }
             if(this.uuid == null){
                 Logging.logErrorMessage("Failed to generate UUID for packet.");
                 throw new NoSuchAlgorithmException();
@@ -101,11 +121,12 @@ public class PacketWrapper {
                 return;
             }
 
-            if (srcPort == 80 || srcPort == 8080 || destPort == 80 || destPort == 8080 ){
-                this.isHTTPS = true;
-            }else if(srcPort == 443 || destPort == 443 ){
-                this.isHTTPS = false;
-            }
+        if (srcPort == 80 || srcPort == 8080 || destPort == 80 || destPort == 8080 ){
+            this.isHTTPS = true;
+        }else if(srcPort == 443 || destPort == 443 ){
+            this.isHTTPS = false;
+        }
+
             this.packetSize = p.length();
     }
 
@@ -160,5 +181,13 @@ public class PacketWrapper {
     @Override
     public String toString(){
         return "[" + packet_count + "] " + Long.toString(timestamp) + " | " + (this.isHTTPS ? "HTTPS" : "HTTP") + ":" + this.protocol_type.toString() + " " + this.getSrcIp() + ":" + this.srcPort + " -> " + this.getDestIp() + ":" + this.destPort;
+    }
+
+    public int getSrcPort(){
+        return srcPort;
+    }
+
+    public int getDestPort(){
+        return destPort;
     }
 }
