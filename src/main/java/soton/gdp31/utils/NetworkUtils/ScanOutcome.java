@@ -14,8 +14,8 @@ public class ScanOutcome {
      * Variable initalisation
      */
     private byte[] uuid;
-    private int[] tcp_ports; // List of port numbers, where an open TCP service is.
-    private int[] udp_ports; // List of port numbers, where an open UDP service is.
+    private List<Integer> tcp_ports; // List of port numbers, where an open TCP service is.
+    private List<Integer> udp_ports; // List of port numbers, where an open UDP service is.
     private String targetAddress;
     private long timeOfScan; // TODO: Add implementation to get time during scan.
 
@@ -39,15 +39,15 @@ public class ScanOutcome {
         return uuid;
     }
     
-    public void setTCPPorts(int[] ports) {
+    public void setTCPPorts(List<Integer> ports) {
         this.tcp_ports = ports;
     }
 
-    public int[] getTCPPorts(){
+    public List<Integer> getTCPPorts(){
         return tcp_ports;
     }
 
-    public void setUDPPorts(int[] ports) {
+    public void setUDPPorts(List<Integer> ports) {
         this.udp_ports = ports;
     }
 
@@ -74,20 +74,12 @@ public class ScanOutcome {
     /**
      * Helpers
      */
-    public void addTCPResult(Integer port, Boolean open) {
-        tcp_ports.
+    public void addTCPResult(Integer port) {
+        tcp_ports.add(port);
     }
 
-    public Boolean getTCPResult(Integer port){
-        return tcp_ports.get(port);
-    }
-
-    public void addUDPResult(Integer port, Boolean open) {
-        udp_ports.put(port, open);
-    }
-
-    public Boolean getUDPResult(Integer port){
-        return udp_ports.get(port);
+    public void addUDPResult(Integer port) {
+        udp_ports.add(port);
     }
 
     public void clearAllResults() {

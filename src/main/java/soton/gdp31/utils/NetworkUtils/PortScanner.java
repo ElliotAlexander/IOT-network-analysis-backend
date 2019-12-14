@@ -181,22 +181,40 @@ import java.util.*;
              case RANGE:
                 outcome.setAddress(targetAddress);
                 for (int i = fromPort; i < toPort; i++) {
-                    Boolean result = ScanSinglePort(targetAddress, i);
-                    outcome.addResult(i, result);
+                    Boolean resultTCP = ScanTCPSinglePort(targetAddress, i);
+                    Boolean resultUDP = ScanUDPSinglePort(targetAddress, i);
+                    if (resultTCP) {
+                        outcome.addTCPResult(i);
+                    }
+                    if (resultUDP) {
+                        outcome.addUDPResult(i);
+                    }
                 }
                 break;
 
             case SINGLE:
                 outcome.setAddress(targetAddress);
-                Boolean result = ScanSinglePort(targetAddress, targetPort);
-                outcome.addResult(targetPort, result);
+                Boolean resultTCP = ScanTCPSinglePort(targetAddress, targetPort);
+                Boolean resultUDP = ScanUDPSinglePort(targetAddress, targetPort);
+                if (resultTCP) {
+                    outcome.addTCPResult(targetPort);
+                }
+                if (resultUDP) {
+                    outcome.addUDPResult(targetPort);
+                }
                 break;
                 
             case ALL:
                 outcome.setAddress(targetAddress);
                 for (int i = MINIMUM_PORT; i < MAXIMUM_PORT; i++) {
-                    Boolean aResult = ScanSinglePort(targetAddress, i);
-                    outcome.addResult(i, aResult);
+                    Boolean result_TCP = ScanTCPSinglePort(targetAddress, i);
+                    Boolean result_UDP = ScanUDPSinglePort(targetAddress, i);
+                    if (result_TCP) {
+                        outcome.addTCPResult(i);
+                    }
+                    if (result_UDP) {
+                        outcome.addUDPResult(i);
+                    }
                 }
                 break;
             default:
@@ -214,9 +232,8 @@ import java.util.*;
      * @param targetPort
      * @return 
      */
-    private Boolean ScanSinglePort(String targetAddress, int targetPort) {
+    private Boolean ScanTCPSinglePort(String targetAddress, int targetPort) {
         ServerSocket socket = null;             // TCP check        // Check with Elliot - do i want to be using ServerSocket or Socket to encapsulate which side of comms with the device?
-        DatagramSocket datagramSocket = null;   // UDP check
         InetAddress address = null;             // target object
 
         try {
@@ -235,7 +252,18 @@ import java.util.*;
             // Connection refused.
         }
 
+        // If this code is reached, both have thrown IOExceptions
+        // Connection refused by UDP and TCP. No active service on port.
+        return false;
+    }
+
+    private Boolean ScanUDPSinglePort(String targetAddress, int targetPort) {
+        DatagramSocket datagramSocket = null;   // UDP check
+        InetAddress address = null;             // target object
+
         try {
+            address = InetAddress.getByName(targetAddress);
+
             datagramSocket = new DatagramSocket(targetPort, address);
             datagramSocket.setReuseAddress(true);
 

@@ -4,10 +4,16 @@ import soton.gdp31.exceptions.database.*;
 import soton.gdp31.utils.NetworkUtils.ScanOutcome;
 import soton.gdp31.cache.DeviceUUIDCache;
 import soton.gdp31.wrappers.PacketWrapper;
+import soton.gdp31.logger.*;
 
 import java.sql.*;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Class to input the ScanOutcome object into the database and retrieve
@@ -33,8 +39,8 @@ public class DBPortHandler {
             // Is device in PortScanning database?
             if (deviceExistsInPortDB(o.getUUID())) {
                 // Update stats.
-                updatePortList(o.getPorts());
-                updateLastScanned(o.getTimeOfScan());
+                updateTCPPortList(o.getTCPPorts(), o.getUUID());
+                updateUDPPortList(o.getUDPPorts(), o.getUUID());
             } else { // Device not in PortScanning database.
                 addDeviceToDatabase(o);
             }
@@ -49,16 +55,53 @@ public class DBPortHandler {
             PreparedStatement preparedStatement = c.prepareStatement(insert_query);
 
             preparedStatement.setBytes(1, o.getUUID());
-            preparedStatement.setArray(2, o.getTCPPorts());
-            preparedStatement.setArray(3, o.getUDPPorts());
+            preparedStatement.setString(2, convertPortsToString(o, "TCP"));
+            preparedStatement.setString(3, convertPortsToString(o, "UDP"));
+            preparedStatement.setTimestamp(4,     new Timestamp(
+                ZonedDateTime.now().toInstant().toEpochMilli()
+            ));
+            preparedStatement.execute();
+        } catch (SQLException e){
+            new DBExceptionHandler(e, database_connection_handler);
         }
     }
 
-    private void updateLastScanned(long timeOfScan) {
+    /**
+     * Update the TCP list in the port_scanning table for a given UUID.
+     */
+    private void updateTCPPortList(List<Integer> ports, byte[] uuid) {
+        String insert_query = "UPDATE port_scanning SET open_tcp_ports = ?, last_scanned = ? WHERE uuid = ?";
+
+        try {
+            PreparedStatement preparedStatement = c.prepareStatement(insert_query);
+            preparedStatement.setString(1, convertPortsToString(ports));
+            preparedStatement.setTimestamp(2,     new Timestamp(
+                ZonedDateTime.now().toInstant().toEpochMilli()
+            ));
+            preparedStatement.setBytes(3, uuid);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e){
+            new DBExceptionHandler(e, database_connection_handler);
+        }
     }
 
-    private void updatePortList(Map<Integer, Boolean> ports) {
-        
+    /**
+     * Update the UDP list in the port_scanning table for a given UUID.
+     */
+    private void updateUDPPortList(List<Integer> ports, byte[] uuid) {
+        String insert_query = "UPDATE port_scanning SET open_udp_ports = ?, last_scanned = ? WHERE uuid = ?";
+
+        try {
+            PreparedStatement preparedStatement = c.prepareStatement(insert_query);
+            preparedStatement.setString(1, convertPortsToString(ports));
+            preparedStatement.setTimestamp(2,     new Timestamp(
+                ZonedDateTime.now().toInstant().toEpochMilli()
+            ));
+            preparedStatement.setBytes(3, uuid);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e){
+            new DBExceptionHandler(e, database_connection_handler);
+        }
     }
 
     /**
@@ -84,7 +127,53 @@ public class DBPortHandler {
     }
 
     /**
-     * Helper to convert an List of integers to an Array for insertion into PostGresSQL
+     * Helper to convert ScanOutcome object to a string containing comma seperated values of open ports.
      */
+    private String convertPortsToString(ScanOutcome o, String type) {
+        List<Integer> ports = new ArrayList<Integer>();
+
+        if (type.equalsIgnoreCase("TCP")){
+            ports = o.getTCPPorts();
+        } else if (type.equalsIgnoreCase("UDP")){
+            ports = o.getUDPPorts();
+        } else {
+            Logging.logErrorMessage("Database Port Handler: Wrong string type passed to convertPortsToString function. Must of type UDP or TCP.");
+        }
+
+        StringBuilder strbul = new StringBuilder();
+
+        Iterator<Integer> iter = ports.iterator();
+        while(iter.hasNext()) {
+            strbul.append(iter.next());
+            if(iter.hasNext()){
+                strbul.append(",");
+            }
+        }
+        String csv = strbul.toString();
+        return csv; // Comma seperated string of ports e.g. 
+    }
+
+    private String convertPortsToString(List<Integer> ports) {
+        StringBuilder strbul = new StringBuilder();
+
+        Iterator<Integer> iter = ports.iterator();
+        while(iter.hasNext()) {
+            strbul.append(iter.next());
+            if(iter.hasNext()){
+                strbul.append(",");
+            }
+        }
+        String csv = strbul.toString();
+        return csv; // Comma seperated string of ports e.g. 
+    }
     
+    /**
+     * Helper to convert CSV to List<Integer>
+     */
+    private List<Integer> convertStringtoPorts(String csv) {
+        List<Integer> list = Stream.of(csv.split(","))
+            .map(Integer::parseInt)
+            .collect(Collectors.toList());
+        return list;
+    }
  }
