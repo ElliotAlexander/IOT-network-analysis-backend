@@ -9,6 +9,12 @@ import soton.gdp31.utils.PacketProcessingQueue;
 import soton.gdp31.wrappers.DeviceWrapper;
 import soton.gdp31.wrappers.PacketWrapper;
 
+/**
+ * @Author Elliot Alexander
+ * <p>
+ * Packet processing thread is responsible for pulling packet objects from the shared queue, and handling updating the
+ * database / internal representation, before discarding the packet object.
+ */
 public class PacketProcessingThread extends Thread {
 
     private DBConnection connection_handler;
@@ -27,33 +33,38 @@ public class PacketProcessingThread extends Thread {
 
     @Override
     public void run() {
-        while(true) {
+        while (true) {
 
-            if(!PacketProcessingQueue.instance.isEmpty()){
+            if (!PacketProcessingQueue.instance.isEmpty()) {
                 PacketWrapper p = PacketProcessingQueue.instance.pop();
-                packet_handler.commitPacketToDatabase(p);
+                packet_handler.addDeviceToDatabase(p);
 
-                if(deviceListManager.checkDevice(p.getUUID())) {
+                if (deviceListManager.checkDevice(p.getUUID())) {
+                    // Each device has it's own internal representation - a device wrapper.
+                    // Get the correct device wrapper for the source / destination of this packet.
                     DeviceWrapper deviceWrapper = deviceListManager.getDevice(p.getUUID());
+
+                    // Update internal representation.
                     if (p.isHTTPS()) {
                         deviceWrapper.setHttpsPacketCount(deviceWrapper.getHttpsPacketCount() + 1);
                     }
 
-
                     deviceWrapper.setPacketCount(deviceWrapper.getPacketCount() + 1);
+
+
+                    // Every ten seconds - update the database.
                     if (System.currentTimeMillis() - deviceWrapper.getLastUpdateTime() > 10000) {
-                        System.out.println("Updating device " + p.getUUID());
                         deviceWrapper.setLastUpdateTime(System.currentTimeMillis());
                         packet_handler.updateDeviceTimestamp(p);
                         packet_handler.updateDeviceStats(deviceWrapper, System.currentTimeMillis());
                     }
-                } else{
+                } else {
+                    // If we haven't seen a device before.
                     System.out.println("Found new device " + p.getUUID());
-                        DeviceWrapper device = deviceListManager.addDevice(p.getUUID());
-                        packet_handler.commitPacketToDatabase(p);
-                        packet_handler.updateDeviceStats(device, System.currentTimeMillis());
-                    }
+                    DeviceWrapper device = deviceListManager.addDevice(p.getUUID());
+                    packet_handler.updateDeviceStats(device, System.currentTimeMillis());
                 }
+            }
         }
     }
 }
