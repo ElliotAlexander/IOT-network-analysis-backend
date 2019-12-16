@@ -1,7 +1,7 @@
 
 package soton.gdp31.database;
 
-import soton.gdp31.cache.DeviceUpdateCache;
+import org.pcap4j.packet.DnsQuestion;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.cache.DeviceUUIDCache;
 import soton.gdp31.wrappers.DeviceWrapper;
@@ -9,19 +9,26 @@ import soton.gdp31.wrappers.PacketWrapper;
 
 import java.sql.*;
 import java.time.ZonedDateTime;
+import java.util.Iterator;
+import java.util.List;
 
-
-public class DBPacketHandler {
+/**
+ * @Author Elliot Alexander
+ * This class acts as a mapping for DeviceWrapper onto the database.
+ * Elements of DeviceWrapper, or previously unseen devices, may be passed in here and updated in the database.
+ * THis class has no internal state and acts as a
+ */
+public class DBDeviceHandler {
 
     private final DBConnection database_connection_handler;
     private Connection c;
 
-    public DBPacketHandler(DBConnection database_connection_handler) throws DBConnectionClosedException {
+    public DBDeviceHandler(DBConnection database_connection_handler) throws DBConnectionClosedException {
         this.database_connection_handler = database_connection_handler;
         this.c = database_connection_handler.getConnection();
     }
 
-    public void addDeviceToDatabase(PacketWrapper p){
+    public void addToDatabase(PacketWrapper p){
         if(!DeviceUUIDCache.DeviceObjectCacheInstance(database_connection_handler).checkDeviceExists(p.getUUID())) {
             try {
                 String insert_query = "INSERT INTO devices(" +
@@ -58,23 +65,21 @@ public class DBPacketHandler {
         }
     }
 
-    public void updateDeviceTimestamp(PacketWrapper p){
+    public void updateLastSeen(DeviceWrapper device){
         try {
             String update_query = "UPDATE devices SET last_seen = ? WHERE uuid = ?";
             PreparedStatement preparedStatement = c.prepareStatement(update_query);
             preparedStatement.setTimestamp(1, new Timestamp(
                     ZonedDateTime.now().toInstant().toEpochMilli()
             ));
-            preparedStatement.setBytes(2, p.getUUID());
+            preparedStatement.setBytes(2, device.getUUID());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             new DBExceptionHandler(e, database_connection_handler);
         }
     }
 
-
-
-    public void updateDeviceStats(DeviceWrapper device_wrapper, long timestamp){
+    public void updatePacketCounts(DeviceWrapper device_wrapper, long timestamp){
         String insert_query = "INSERT INTO packet_counts_over_time(uuid, timestamp, packet_count, https_packet_count) VALUES(?,?,?,?)";
         try {
             PreparedStatement preparedStatement = c.prepareStatement(insert_query);
@@ -90,5 +95,31 @@ public class DBPacketHandler {
         }
     }
 
+    public void updateDNSQueries(DeviceWrapper device){
 
+        if(device.getDNSQueries().isEmpty()){
+            return;
+        }
+
+        byte[] uuid = device.getUUID();
+        try {
+            c.setAutoCommit(false);
+            PreparedStatement prepStmt = c.prepareStatement(
+                    "INSERT INTO device_dns_storage(uuid, url) VALUES (?,?) ON CONFLICT DO NOTHING;");
+            Iterator<DnsQuestion> it = device.getDNSQueries().iterator();
+            while(it.hasNext()){
+                DnsQuestion p = it.next();
+                prepStmt.setBytes(1,uuid);
+                prepStmt.setString(2,p.getQName().getName());
+                prepStmt.addBatch();
+            }
+
+            int [] numUpdates=prepStmt.executeBatch();
+            c.commit();
+            c.setAutoCommit(true);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println(e.getNextException());
+        }
+    }
 }

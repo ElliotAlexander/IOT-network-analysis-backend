@@ -14,6 +14,7 @@ import soton.gdp31.utils.UUIDGenerator;
 
 import java.net.*;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 
 public class PacketWrapper {
 
@@ -40,6 +41,9 @@ public class PacketWrapper {
 
     private ProtocolType protocol_type;
 
+    private boolean is_dns_packet;
+    private List<DnsQuestion> dns_address;
+
     private byte[] uuid;
 
     public PacketWrapper(EthernetPacket p, long timestamp, long packet_count) throws InvalidIPPacketException {
@@ -58,6 +62,13 @@ public class PacketWrapper {
         }
         this.src_ip = ipPacket.getHeader().getSrcAddr().getHostAddress();
         this.dest_ip = ipPacket.getHeader().getDstAddr().getHostAddress();
+
+
+        if (ipPacket.contains(DnsPacket.class)) {
+            DnsPacket.DnsHeader dnsPacketHeader = p.get(DnsPacket.class).getHeader();
+            this.is_dns_packet = true;
+            this.dns_address = dnsPacketHeader.getQuestions();
+        }
 
         boolean src_is_internal = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getSrcAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
         boolean dest_is_internal = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getDstAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
@@ -189,5 +200,13 @@ public class PacketWrapper {
 
     public int getDestPort(){
         return destPort;
+    }
+
+    public boolean getIsDNSPacket() {
+        return is_dns_packet;
+    }
+
+    public List<DnsQuestion> getDNSQueries(){
+        return dns_address;
     }
 }

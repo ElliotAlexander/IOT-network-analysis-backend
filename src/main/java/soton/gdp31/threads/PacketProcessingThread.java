@@ -1,9 +1,9 @@
 package soton.gdp31.threads;
 
-import soton.gdp31.cache.DeviceUpdateCache;
 import soton.gdp31.database.DBConnection;
-import soton.gdp31.database.DBPacketHandler;
+import soton.gdp31.database.DBDeviceHandler;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
+import soton.gdp31.logger.Logging;
 import soton.gdp31.manager.DeviceListManager;
 import soton.gdp31.utils.PacketProcessingQueue;
 import soton.gdp31.wrappers.DeviceWrapper;
@@ -18,14 +18,14 @@ import soton.gdp31.wrappers.PacketWrapper;
 public class PacketProcessingThread extends Thread {
 
     private DBConnection connection_handler;
-    private DBPacketHandler packet_handler;
+    private DBDeviceHandler device_database_handler;
     private DeviceListManager deviceListManager;
 
     public PacketProcessingThread() {
         try {
             this.connection_handler = new DBConnection();
             this.deviceListManager = new DeviceListManager(connection_handler);
-            this.packet_handler = new DBPacketHandler(connection_handler);
+            this.device_database_handler = new DBDeviceHandler(connection_handler);
         } catch (DBConnectionClosedException e) {
             e.printStackTrace();
         }
@@ -37,7 +37,7 @@ public class PacketProcessingThread extends Thread {
 
             if (!PacketProcessingQueue.instance.isEmpty()) {
                 PacketWrapper p = PacketProcessingQueue.instance.pop();
-                packet_handler.addDeviceToDatabase(p);
+                device_database_handler.addToDatabase(p);
 
                 if (deviceListManager.checkDevice(p.getUUID())) {
                     // Each device has it's own internal representation - a device wrapper.
@@ -52,17 +52,22 @@ public class PacketProcessingThread extends Thread {
                     deviceWrapper.setPacketCount(deviceWrapper.getPacketCount() + 1);
 
 
+                    if(p.getIsDNSPacket())
+                        p.getDNSQueries().stream().forEach( query -> deviceWrapper.addDNSQuery(query));
+
+
                     // Every ten seconds - update the database.
                     if (System.currentTimeMillis() - deviceWrapper.getLastUpdateTime() > 10000) {
                         deviceWrapper.setLastUpdateTime(System.currentTimeMillis());
-                        packet_handler.updateDeviceTimestamp(p);
-                        packet_handler.updateDeviceStats(deviceWrapper, System.currentTimeMillis());
+                        device_database_handler.updateLastSeen(deviceWrapper);
+                        device_database_handler.updatePacketCounts(deviceWrapper, System.currentTimeMillis());
+                        device_database_handler.updateDNSQueries(deviceWrapper);
                     }
                 } else {
                     // If we haven't seen a device before.
                     System.out.println("Found new device " + p.getUUID());
                     DeviceWrapper device = deviceListManager.addDevice(p.getUUID());
-                    packet_handler.updateDeviceStats(device, System.currentTimeMillis());
+                    device_database_handler.updatePacketCounts(device, System.currentTimeMillis());
                 }
             }
         }
