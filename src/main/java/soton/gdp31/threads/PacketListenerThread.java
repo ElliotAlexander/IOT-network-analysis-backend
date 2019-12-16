@@ -16,7 +16,6 @@ import java.util.concurrent.TimeoutException;
 public class PacketListenerThread extends Thread {
 
     private PcapHandle handle;
-    private PcapDumper pcap_dumper;
 
     private long packet_count = 0;
 
@@ -26,16 +25,9 @@ public class PacketListenerThread extends Thread {
         // Setup PCAP interface, file dump, database connection and monitoring thread.
         try {
             this.handle = InterfaceUtils.openInterface(Main.interface_name);
-            this.pcap_dumper = handle.dumpOpen(Main.handle_dump_name);
-        } catch (PcapNativeException e) {
-            e.printStackTrace();
-            System.exit(1);
         } catch (InterfaceUnknownException e) {
             e.printStackTrace();
             System.exit(1);
-        } catch (NotOpenException e) {
-            Logging.logErrorMessage("Failed to open handle.");
-            e.printStackTrace();
         }
     }
 
@@ -51,7 +43,7 @@ public class PacketListenerThread extends Thread {
                 ethernet_packet = (EthernetPacket) handle.getNextPacketEx();
                 packet_count++;
                 PacketWrapper packet = new PacketWrapper(ethernet_packet, handle.getTimestamp().toInstant().toEpochMilli(), packet_count);
-                PacketProcessingQueue.instance.push(packet);
+                PacketProcessingQueue.instance.packetQueue.push(packet);
             } catch (PcapNativeException | TimeoutException | NotOpenException | EOFException e) {
                 System.out.println("Error - failed to maintain handle.");
                 handle.close();

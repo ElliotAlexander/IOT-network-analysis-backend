@@ -35,41 +35,51 @@ public class PacketProcessingThread extends Thread {
     public void run() {
         while (true) {
 
-            if (!PacketProcessingQueue.instance.isEmpty()) {
-                PacketWrapper p = PacketProcessingQueue.instance.pop();
-                device_database_handler.addToDatabase(p);
+            PacketWrapper p = PacketProcessingQueue.instance.packetQueue.poll();
 
-                if (deviceListManager.checkDevice(p.getUUID())) {
-                    // Each device has it's own internal representation - a device wrapper.
-                    // Get the correct device wrapper for the source / destination of this packet.
-                    DeviceWrapper deviceWrapper = deviceListManager.getDevice(p.getUUID());
-
-                    // Update internal representation.
-                    if (p.isHTTPS()) {
-                        deviceWrapper.setHttpsPacketCount(deviceWrapper.getHttpsPacketCount() + 1);
-                    }
-
-                    deviceWrapper.setPacketCount(deviceWrapper.getPacketCount() + 1);
-
-
-                    if(p.getIsDNSPacket())
-                        p.getDNSQueries().stream().forEach( query -> deviceWrapper.addDNSQuery(query));
-
-
-                    // Every ten seconds - update the database.
-                    if (System.currentTimeMillis() - deviceWrapper.getLastUpdateTime() > 10000) {
-                        deviceWrapper.setLastUpdateTime(System.currentTimeMillis());
-                        device_database_handler.updateLastSeen(deviceWrapper);
-                        device_database_handler.updatePacketCounts(deviceWrapper, System.currentTimeMillis());
-                        device_database_handler.updateDNSQueries(deviceWrapper);
-                    }
-                } else {
-                    // If we haven't seen a device before.
-                    System.out.println("Found new device " + p.getUUID());
-                    DeviceWrapper device = deviceListManager.addDevice(p.getUUID());
-                    device_database_handler.updatePacketCounts(device, System.currentTimeMillis());
+            if(p == null){
+                try {
+                    Thread.sleep(50);
+                    continue;
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
+
+
+            device_database_handler.addToDatabase(p);
+
+            if (deviceListManager.checkDevice(p.getUUID())) {
+                // Each device has it's own internal representation - a device wrapper.
+                // Get the correct device wrapper for the source / destination of this packet.
+                DeviceWrapper deviceWrapper = deviceListManager.getDevice(p.getUUID());
+
+                // Update internal representation.
+                if (p.isHTTPS()) {
+                    deviceWrapper.setHttpsPacketCount(deviceWrapper.getHttpsPacketCount() + 1);
+                }
+
+                deviceWrapper.setPacketCount(deviceWrapper.getPacketCount() + 1);
+
+
+                if (p.getIsDNSPacket())
+                    p.getDNSQueries().stream().forEach(query -> deviceWrapper.addDNSQuery(query));
+
+
+                // Every ten seconds - update the database.
+                if (System.currentTimeMillis() - deviceWrapper.getLastUpdateTime() > 10000) {
+                    deviceWrapper.setLastUpdateTime(System.currentTimeMillis());
+                    device_database_handler.updateLastSeen(deviceWrapper);
+                    device_database_handler.updatePacketCounts(deviceWrapper, System.currentTimeMillis());
+                    device_database_handler.updateDNSQueries(deviceWrapper);
+                }
+            } else {
+                // If we haven't seen a device before.
+                System.out.println("Found new device " + p.getUUID());
+                DeviceWrapper device = deviceListManager.addDevice(p.getUUID());
+                device_database_handler.updatePacketCounts(device, System.currentTimeMillis());
+            }
+
         }
     }
 }
