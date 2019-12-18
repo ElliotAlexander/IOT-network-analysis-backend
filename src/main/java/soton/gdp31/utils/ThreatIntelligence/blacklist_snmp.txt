@@ -1,6 +1,3 @@
-# Provided by nothink.org
-# SNMP blacklist, 2019 (IP address)
-# Generated 2019-12-15 23:00:06
 100.25.168.234
 100.26.109.91
 104.131.133.127
