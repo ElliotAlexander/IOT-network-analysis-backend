@@ -34,11 +34,6 @@ public class PacketWrapperTest {
     }
 
     @Test
-    public void subnetIdentificationTest(){
-        assert this.wrapper.isOutgoingTraffic() == false;
-    }
-
-    @Test
     public void assertPortSolicitation(){
         assert this.wrapper.getDestPort() == 56711;
         assert this.wrapper.getSrcPort() == 4433;

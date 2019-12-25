@@ -32,22 +32,23 @@ public class DBDeviceHandler {
         if(!DeviceUUIDCache.DeviceObjectCacheInstance(database_connection_handler).checkDeviceExists(p.getUUID())) {
             try {
                 String insert_query = "INSERT INTO devices(" +
-                        "uuid,device_hostname,device_nickname,internal_ip_v4,currently_active,last_seen,first_seen," +
-                        "set_ignored)" + " VALUES(?,?,?,?,?,?,?,?);";
+                        "uuid,mac_addr,device_hostname,device_nickname,internal_ip_v4,currently_active,last_seen,first_seen," +
+                        "set_ignored)" + " VALUES(?,?,?,?,?,?,?,?,?);";
                 PreparedStatement preparedStatement = c.prepareStatement(insert_query);
                 preparedStatement.setBytes(1, p.getUUID());
-                preparedStatement.setString(2, (p.isOutgoingTraffic() ? p.getSrcHostname() : p.getDestHostname()));
-                preparedStatement.setString(3, "not set");
-                preparedStatement.setString(4, p.getSrcIp());
-                preparedStatement.setBoolean(5, true);
-                preparedStatement.setTimestamp(6, new Timestamp(
-                        ZonedDateTime.now().toInstant().toEpochMilli()
-                ));
-
+                preparedStatement.setString(2, p.getAssociatedMacAddress());
+                preparedStatement.setString(3, p.getAssociatedHostname());
+                preparedStatement.setString(4, "not set");
+                preparedStatement.setString(5, p.getSrcIp());
+                preparedStatement.setBoolean(6, true);
                 preparedStatement.setTimestamp(7, new Timestamp(
                         ZonedDateTime.now().toInstant().toEpochMilli()
                 ));
-                preparedStatement.setBoolean(8, false);
+
+                preparedStatement.setTimestamp(8, new Timestamp(
+                        ZonedDateTime.now().toInstant().toEpochMilli()
+                ));
+                preparedStatement.setBoolean(9, false);
                 preparedStatement.execute();
 
                 String device_insert_query = "INSERT INTO device_stats(uuid, packet_count, https_packet_count, data_in, data_out, data_transferred)" + "VALUES(?,?,?,?,?,?);";

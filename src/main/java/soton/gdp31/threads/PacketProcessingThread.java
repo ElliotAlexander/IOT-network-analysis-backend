@@ -5,6 +5,7 @@ import soton.gdp31.database.DBDeviceHandler;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.logger.Logging;
 import soton.gdp31.manager.DeviceListManager;
+import soton.gdp31.utils.NetworkUtils.HostnameFetcher;
 import soton.gdp31.utils.PacketProcessingQueue;
 import soton.gdp31.wrappers.DeviceWrapper;
 import soton.gdp31.wrappers.PacketWrapper;
@@ -46,7 +47,6 @@ public class PacketProcessingThread extends Thread {
                 }
             }
 
-
             device_database_handler.addToDatabase(p);
 
             if (deviceListManager.checkDevice(p.getUUID())) {
@@ -77,6 +77,7 @@ public class PacketProcessingThread extends Thread {
                 // If we haven't seen a device before.
                 System.out.println("Found new device " + p.getUUID());
                 DeviceWrapper device = deviceListManager.addDevice(p.getUUID());
+                System.out.println("Hostname: " + HostnameFetcher.fetchHostname(p.getSrcIp()));
                 device_database_handler.updatePacketCounts(device, System.currentTimeMillis());
             }
 
