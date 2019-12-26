@@ -20,13 +20,13 @@ public class DeviceHostnameCache {
             if(internal_hostname_cache.containsKey(uuid)){
                 return internal_hostname_cache.get(uuid);
             } else {
-                return "";
+                return null;
             }
         } else {
             if(external_hostname_cache.containsKey(uuid)){
                 return external_hostname_cache.get(uuid);
             } else {
-                return "";
+                return null;
             }
         }
     }

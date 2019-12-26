@@ -29,6 +29,8 @@ public class Main {
     public static final String interface_name = "en0";
     public static final String handle_dump_name = "out.pcap";
 
+    public static final int PPT_THREAD_COUNT = 1;
+
     public static void main(String[] args) {
         new Main();
     }
@@ -57,13 +59,16 @@ public class Main {
         PacketListenerThread plt = new PacketListenerThread();
         plt.start();
 
-        Logging.logInfoMessage("Starting packet processing thread.");
-        PacketProcessingThread ppt = new PacketProcessingThread();
-        ppt.start();
-
         ArrayList<Thread> threadPool = new ArrayList<Thread>();
-        threadPool.add(ppt);
         threadPool.add(plt);
+
+        for(int i = 0; i < PPT_THREAD_COUNT; i++){
+            Logging.logInfoMessage("Starting packet processing thread number " + i);
+            PacketProcessingThread ppt = new PacketProcessingThread();
+            ppt.start();
+            threadPool.add(ppt);
+        }
+
         while(true){
             for(Thread t : threadPool){
                 if(!t.isAlive() || t == null){

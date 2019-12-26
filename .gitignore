@@ -1,5 +1,7 @@
 target/
-
+.classpath
+.project
+.settings/
 
 # User-specific stuff
 .idea/**/workspace.xml
