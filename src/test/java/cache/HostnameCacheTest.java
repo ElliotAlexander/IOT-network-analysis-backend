@@ -22,7 +22,7 @@ public class HostnameCacheTest {
     @Test
     public void addTest(){
         cache.addDevice("NewDevice", randomUUID, false );
-        assert(cache.checkHostname(randomUUID, false) != "");
-        assert(cache.checkHostname(randomUUID, true) == "");
+        assert(cache.checkHostname(randomUUID, false) != null);
+        assert(cache.checkHostname(randomUUID, true) == null);
     }
 }
