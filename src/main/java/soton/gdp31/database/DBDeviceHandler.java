@@ -81,7 +81,7 @@ public class DBDeviceHandler {
     }
 
     public void updatePacketCounts(DeviceWrapper device_wrapper, long timestamp){
-        String insert_query = "INSERT INTO packet_counts_over_time(uuid, timestamp, packet_count, https_packet_count) VALUES(?,?,?,?)";
+        String insert_query = "INSERT INTO device_stats_over_time(uuid, timestamp, packet_count, https_packet_count, data_transferred, data_in, data_out) VALUES(?,?,?,?,?,?,?)";
         try {
             PreparedStatement preparedStatement = c.prepareStatement(insert_query);
             preparedStatement.setBytes(1, device_wrapper.getUUID());
@@ -90,6 +90,10 @@ public class DBDeviceHandler {
             ));
             preparedStatement.setLong(3, device_wrapper.getPacketCount());
             preparedStatement.setLong(4, device_wrapper.getPacketCount());
+            preparedStatement.setLong(5, device_wrapper.getDataTransferred());
+            preparedStatement.setLong(6, device_wrapper.getDataIn());
+            preparedStatement.setLong(7, device_wrapper.getDataOut());
+
             preparedStatement.executeUpdate();
         } catch (SQLException e){
             new DBExceptionHandler(e, database_connection_handler);
