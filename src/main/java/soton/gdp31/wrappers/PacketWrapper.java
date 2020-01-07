@@ -117,7 +117,10 @@ public class PacketWrapper {
                     associated_mac_address = dest_mac_address;
                     associated_hostname = dest_hostname;
                 } else {
-                    Logging.logInfoMessage("Double external traffic");
+                    this.uuid = UUIDGenerator.generateUUID(src_mac_address);
+                    DeviceHostnameCache.instance.addDevice(src_hostname, uuid, true);
+                    associated_mac_address = src_mac_address;
+                    associated_hostname = src_hostname;;
                 }
 
                 if (this.uuid == null) {
