@@ -106,7 +106,7 @@ public class PacketWrapper {
             boolean dest_is_internal = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getDstAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
             this.is_internal_traffic = (dest_is_internal && src_is_internal);
             try {
-                if ( is_internal_traffic || src_is_internal) {      // Is the traffic purely internal? Or is just the source internal
+                if ( is_internal_traffic) {      // Is the traffic purely internal? Or is just the source internal
                     this.uuid = UUIDGenerator.generateUUID(src_mac_address);
                     DeviceHostnameCache.instance.addDevice(src_hostname, uuid, true);
                     associated_mac_address = src_mac_address;

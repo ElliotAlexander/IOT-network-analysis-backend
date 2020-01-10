@@ -81,9 +81,19 @@ public class DBDeviceHandler {
     }
 
     public void updatePacketCounts(DeviceWrapper device_wrapper, long timestamp){
-        String insert_query = "INSERT INTO device_stats_over_time(uuid, timestamp, packet_count, https_packet_count, data_transferred, data_in, data_out) VALUES(?,?,?,?,?,?,?)";
+
+        /**
+         * Update the device stats over time table
+         *
+         * We keep two counts - one general count (to avoid us having to search many rows for an overall view),
+         * And a count recorded by time, to allow us to graph this data if we want.
+         * Both tables need to be updated seperately.
+         */
+
+        // Device stats over time
+        String deviceStatsOverTimeInsertQuery = "INSERT INTO device_stats_over_time(uuid, timestamp, packet_count, https_packet_count, data_transferred, data_in, data_out) VALUES(?,?,?,?,?,?,?)";
         try {
-            PreparedStatement preparedStatement = c.prepareStatement(insert_query);
+            PreparedStatement preparedStatement = c.prepareStatement(deviceStatsOverTimeInsertQuery);
             preparedStatement.setBytes(1, device_wrapper.getUUID());
             preparedStatement.setTimestamp(2, new Timestamp(
                     timestamp
@@ -94,8 +104,23 @@ public class DBDeviceHandler {
             preparedStatement.setLong(6, device_wrapper.getDataIn());
             preparedStatement.setLong(7, device_wrapper.getDataOut());
 
-            preparedStatement.executeUpdate();
+            preparedStatement.execute();
         } catch (SQLException e){
+            new DBExceptionHandler(e, database_connection_handler);
+        }
+
+        // Device stats - general count.
+        String deviceStatsUpdateQuery = "UPDATE device_stats SET packet_count = ?, https_packet_count = ?, data_transferred = ?, data_in = ?, data_out = ? where uuid = ?";
+        try {
+            PreparedStatement preparedStatement = c.prepareStatement(deviceStatsUpdateQuery);
+            preparedStatement.setLong(1, device_wrapper.getPacketCount());
+            preparedStatement.setLong(2, device_wrapper.getHttpsPacketCount());
+            preparedStatement.setLong(3, device_wrapper.getDataTransferred());
+            preparedStatement.setLong(4, device_wrapper.getDataIn());
+            preparedStatement.setLong(5, device_wrapper.getDataOut());
+            preparedStatement.setBytes(6, device_wrapper.getUUID());
+            preparedStatement.executeUpdate();
+        } catch(SQLException e) {
             new DBExceptionHandler(e, database_connection_handler);
         }
     }

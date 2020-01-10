@@ -1,12 +1,10 @@
 package soton.gdp31;
 
-import org.pcap4j.core.*;
 
-import soton.gdp31.exceptions.InterfaceUnknownException;
+import soton.gdp31.config.ConfigLoader;
 import soton.gdp31.logger.Logging;
 import soton.gdp31.threads.PacketListenerThread;
 import soton.gdp31.threads.PacketProcessingThread;
-import soton.gdp31.utils.NetworkUtils.InterfaceUtils;
 import soton.gdp31.utils.NetworkUtils.NetworkIdentification;
 
 import java.net.InetAddress;
@@ -17,17 +15,32 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Properties;
 
 public class Main {
 
+
+    public static final String config_name = "config.txt";
     public static byte[] SYSTEM_IP;
     public static byte[] GATEWAY_IP;
     public static byte[] SUBNET_MASK;
 
-    public static final String interface_name = "en0";
-    public static final String handle_dump_name = "out.pcap";
+    // This is a list of the configuration options we'll declare below, and load from the config file.
+    private static final String configOptions[] = {
+            "interface_name",
+            "pcap_dump_file",
+            "pcap_dump_enabled",
+            "logfile_output",
+            "logfile_enabled"
+    };
+
+    // Loadable configuration options.
+    public static String interface_name;
+    public static String pcap_dump_file;
+    public static boolean pcap_dump_enabled;
+    public static String logfile_output;
+    public static boolean logfile_enabled;
 
     public static final int PPT_THREAD_COUNT = 1;
 
@@ -37,6 +50,9 @@ public class Main {
 
     public Main() {
 
+        // load our config file
+        Properties prop = ConfigLoader.instance.loadConfig("config.txt");
+        setupConfigurationOptions(prop);
         printInterfaces();
 
         // Setup basic network information.
@@ -111,12 +127,33 @@ public class Main {
 
 
     public static void displayInterfaceInformation(NetworkInterface netint) throws SocketException {
-        System.out.printf("Display name: %s\n", netint.getDisplayName());
-        System.out.printf("Name: %s\n", netint.getName());
+        System.out.printf("[INFO] Display name: %s\n", netint.getDisplayName());
+        System.out.printf("[INFO] Name: %s\n", netint.getName());
         Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
         for (InetAddress inetAddress : Collections.list(inetAddresses)) {
-            System.out.printf("InetAddress: %s\n", inetAddress);
+            System.out.printf("[INFO] InetAddress: %s\n", inetAddress);
         }
         System.out.printf("\n");
+    }
+
+    private void setupConfigurationOptions(Properties props){
+
+        for(String option: this.configOptions){
+            try {
+                if(this.getClass().getField(option).getType().isAssignableFrom(String.class)){
+                    this.getClass().getField(option).set(this, props.getProperty(option));
+                    Logging.logInfoMessage("Loaded String config option " + option + " with value " + this.getClass().getField(option).get(this));
+                } else {
+                    this.getClass().getField(option).set(this, props.getProperty(option) == "true" ? true : false);
+                    Logging.logInfoMessage("Loaded boolean configuration option " + option + " with value " + this.getClass().getField(option).get(this));
+                }
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();
+                Logging.logErrorMessage("Failed to load configuration option " + option + ". Invalid field name specified.");
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+                Logging.logErrorMessage("Failed to load configuration option " + option + ". Invalid access modifier specified. ");
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 package soton.gdp31.threads;
 
+import org.omg.SendingContext.RunTime;
 import org.pcap4j.core.*;
 import org.pcap4j.packet.*;
 import soton.gdp31.Main;
@@ -45,8 +46,15 @@ public class PacketListenerThread extends Thread {
                 PacketWrapper packet = new PacketWrapper(ethernet_packet, handle.getTimestamp().toInstant().toEpochMilli(), packet_count);
                 PacketProcessingQueue.instance.packetQueue.push(packet);
             } catch (PcapNativeException | TimeoutException | NotOpenException | EOFException e) {
-                System.out.println("Error - failed to maintain handle.");
+                Logging.logErrorMessage("Error - failed to maintain handle.");
                 handle.close();
+                Logging.logErrorMessage("Attempting to restore handle.");
+                try {
+                    this.handle = InterfaceUtils.openInterface(Main.interface_name);
+                } catch (InterfaceUnknownException e1){
+                    Logging.logErrorMessage("Interface " + Main.interface_name + " is no longer available. The packet listener thread will exit, and attempt to rebuild itself.");
+                    throw new RuntimeException();
+                }
             } catch (InvalidIPPacketException e){
                 continue;
             } catch (ClassCastException e){
