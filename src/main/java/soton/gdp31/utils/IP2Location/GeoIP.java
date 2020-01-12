@@ -1,18 +1,23 @@
 package soton.gdp31.utils.IP2Location;
 
+import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.geoip2.exception.GeoIp2Exception;
+import com.maxmind.geoip2.model.CityResponse;
+import com.maxmind.geoip2.record.Subdivision;
+
 public class GeoIP {
     private String ipAddress;
-    private String city;
-    private String latitude;
-    private String longitude;
+    private Country country;
+    private City city;
+    private Location location;
+
 
     // constructors, getters and setters
 
-    public GeoIP(String ipAddress, String city, String latitude, String longitude) {
+    public GeoIP(Country country, City city, Location location) {
         this.ipAddress = ipAddress;
         this.city = city;
-        this.latitude = latitude;
-        this.longitude = longitude;
+        this.location = location;
     }
 
     public void setIpAddress(String ipAddress) {
@@ -23,27 +28,20 @@ public class GeoIP {
         return ipAddress;
     }
 
-    public void setCity(String city) {
+    public void setCity(City city) {
         this.city = city;
     }
 
-    public String getCity() {
+    public City getCity() {
         return city;
     }
     
-    public void setLatitude(String latitude) {
-        this.latitude = latitude;
+    public void setLocation(Location location) {
+        this.location = location;
     }
 
-    public String getLatitude(){
-        return latitude;
+    public Location getLocation(){
+        return location;
     }
 
-    public void setLongitude(String longitude) {
-        this.longitude = longitude;
-    }
-
-    public String getLongitude() {
-        return longitude;
-    }
 }
