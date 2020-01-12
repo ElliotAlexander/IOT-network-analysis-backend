@@ -23,8 +23,12 @@ public class DeviceWrapper {
 
     private byte[] uuid;
 
-    private int packet_count = 0;
-    private int https_packet_count = 0;
+    private long packet_count = 0;
+    private long https_packet_count = 0;
+    private long data_transferred = 0;
+    private long data_in = 0;
+    private long data_out = 0;
+
     private List<DnsQuestion> dns_queries;
 
     private long last_update_time = -1;
@@ -38,19 +42,19 @@ public class DeviceWrapper {
         return uuid;
     }
 
-    public int getHttpsPacketCount() {
+    public long getHttpsPacketCount() {
         return https_packet_count;
     }
 
-    public void setHttpsPacketCount(int https_packet_count_new) {
+    public void setHttpsPacketCount(long https_packet_count_new) {
         this.https_packet_count = https_packet_count_new;
     }
 
-    public int getPacketCount() {
+    public long getPacketCount() {
         return packet_count;
     }
 
-    public void setPacketCount(int packet_count_new) {
+    public void setPacketCount(long packet_count_new) {
         this.packet_count = packet_count_new;
     }
 
@@ -71,5 +75,30 @@ public class DeviceWrapper {
     }
     public void clearDNSQueries(){
         dns_queries.clear();
+    }
+
+    public void setDataTransferred(long new_data_transferred){
+        this.data_transferred = new_data_transferred;
+    }
+
+    public long getDataTransferred(){
+        return this.data_transferred;
+    }
+
+
+    public long getDataIn() {
+        return data_in;
+    }
+
+    public void setDataIn(long data_in) {
+        this.data_in = data_in;
+    }
+
+    public long getDataOut() {
+        return data_out;
+    }
+
+    public void setDataOut(long data_out) {
+        this.data_out = data_out;
     }
 }

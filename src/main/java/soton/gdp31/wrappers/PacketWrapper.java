@@ -235,4 +235,12 @@ public class PacketWrapper {
     public boolean isBroadcastTraffic() {
         return is_broadcast_traffic;
     }
+
+    public String getSrcMacAddress(){
+        return this.src_mac_address;
+    }
+
+    public String getDestMacAddress(){
+        return this.dest_mac_address;
+    }
 }

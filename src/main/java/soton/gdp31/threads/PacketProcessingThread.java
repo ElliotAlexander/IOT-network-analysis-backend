@@ -60,6 +60,12 @@ public class PacketProcessingThread extends Thread {
                 }
 
                 deviceWrapper.setPacketCount(deviceWrapper.getPacketCount() + 1);
+                deviceWrapper.setDataTransferred(deviceWrapper.getDataTransferred() + p.getPacketSize());
+                if(p.getAssociatedMacAddress() ==  p.getDestMacAddress()){
+                    deviceWrapper.setDataIn(deviceWrapper.getDataIn() + p.getPacketSize());
+                } else {
+                    deviceWrapper.setDataOut(deviceWrapper.getDataOut() + p.getPacketSize());
+                }
 
 
                 if (p.getIsDNSPacket())
