@@ -9,6 +9,12 @@ import soton.gdp31.threads.PacketProcessingThread;
 import soton.gdp31.utils.NetworkUtils.InterfaceUtils;
 import soton.gdp31.utils.NetworkUtils.NetworkIdentification;
 
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
@@ -23,13 +29,15 @@ public class Main {
     public static final String interface_name = "en0";
     public static final String handle_dump_name = "out.pcap";
 
-
+    public static final int PPT_THREAD_COUNT = 1;
 
     public static void main(String[] args) {
         new Main();
     }
 
     public Main() {
+
+        printInterfaces();
 
         // Setup basic network information.
         this.SYSTEM_IP = NetworkIdentification.getSystemIp();
@@ -51,11 +59,16 @@ public class Main {
         PacketListenerThread plt = new PacketListenerThread();
         plt.start();
 
-        Logging.logInfoMessage("Starting packet processing thread.");
-        PacketProcessingThread ppt = new PacketProcessingThread();
-        ppt.start();
+        ArrayList<Thread> threadPool = new ArrayList<Thread>();
+        threadPool.add(plt);
 
-        Thread threadPool[] = { ppt, plt };
+        for(int i = 0; i < PPT_THREAD_COUNT; i++){
+            Logging.logInfoMessage("Starting packet processing thread number " + i);
+            PacketProcessingThread ppt = new PacketProcessingThread();
+            ppt.start();
+            threadPool.add(ppt);
+        }
+
         while(true){
             for(Thread t : threadPool){
                 if(!t.isAlive() || t == null){
@@ -65,9 +78,11 @@ public class Main {
                         Constructor<?> ctor = clazz.getConstructor();
                         Object object = ctor.newInstance(new Object[] {});
                         Thread tNew = (Thread) object;
-                        t = tNew;
-                        t.start();
+                        tNew.start();
+                        threadPool.remove(t);
+                        threadPool.add(tNew);
                         Logging.logInfoMessage("Successfully restarted thread.");
+                        continue;
                     } catch (ClassNotFoundException | NoSuchMethodException e) {
                         e.printStackTrace();
                     } catch (IllegalAccessException e) {
@@ -82,5 +97,26 @@ public class Main {
             }
         }
 
+    }
+
+    public static void printInterfaces() {
+        try {
+            Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
+            for (NetworkInterface netint : Collections.list(nets))
+                displayInterfaceInformation(netint);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public static void displayInterfaceInformation(NetworkInterface netint) throws SocketException {
+        System.out.printf("Display name: %s\n", netint.getDisplayName());
+        System.out.printf("Name: %s\n", netint.getName());
+        Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
+        for (InetAddress inetAddress : Collections.list(inetAddresses)) {
+            System.out.printf("InetAddress: %s\n", inetAddress);
+        }
+        System.out.printf("\n");
     }
 }

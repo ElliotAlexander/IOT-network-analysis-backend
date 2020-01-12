@@ -6,25 +6,11 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 
 public class PacketProcessingQueue {
 
-    public static PacketProcessingQueue instance = new PacketProcessingQueue();
+    public static final PacketProcessingQueue instance = new PacketProcessingQueue();
 
-    ConcurrentLinkedDeque<PacketWrapper> concurrentLinkedQueue;
-
+    public ConcurrentLinkedDeque<PacketWrapper> packetQueue;
 
     private PacketProcessingQueue(){
-        concurrentLinkedQueue = new ConcurrentLinkedDeque<>();
-    }
-
-
-    public void push(PacketWrapper p){
-        concurrentLinkedQueue.push(p);
-    }
-
-    public PacketWrapper pop(){
-        return concurrentLinkedQueue.pop();
-    }
-
-    public boolean isEmpty(){
-        return concurrentLinkedQueue.isEmpty();
+        packetQueue = new ConcurrentLinkedDeque<>();
     }
 }
