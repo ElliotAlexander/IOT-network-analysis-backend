@@ -31,7 +31,7 @@ public class DBDeviceHandler {
     public void addToDatabase(PacketWrapper p){
         if(!DeviceUUIDCache.DeviceObjectCacheInstance(database_connection_handler).checkDeviceExists(p.getUUID())) {
             try {
-                String insert_query = "INSERT INTO devices(" +
+                String insert_query = "INSERT INTO backend.devices(" +
                         "uuid,mac_addr,device_hostname,device_nickname,internal_ip_v4,currently_active,last_seen,first_seen," +
                         "set_ignored)" + " VALUES(?,?,?,?,?,?,?,?,?);";
                 PreparedStatement preparedStatement = c.prepareStatement(insert_query);
@@ -51,7 +51,7 @@ public class DBDeviceHandler {
                 preparedStatement.setBoolean(9, false);
                 preparedStatement.execute();
 
-                String device_insert_query = "INSERT INTO device_stats(uuid, packet_count, https_packet_count, data_in, data_out, data_transferred)" + "VALUES(?,?,?,?,?,?);";
+                String device_insert_query = "INSERT INTO backend.device_stats(uuid, packet_count, https_packet_count, data_in, data_out, data_transferred)" + "VALUES(?,?,?,?,?,?);";
                 PreparedStatement device_stats_prepared_statement = c.prepareStatement(device_insert_query);
                 device_stats_prepared_statement.setBytes(1, p.getUUID());
                 device_stats_prepared_statement.setInt(2, 1);
@@ -68,7 +68,7 @@ public class DBDeviceHandler {
 
     public void updateLastSeen(DeviceWrapper device){
         try {
-            String update_query = "UPDATE devices SET last_seen = ? WHERE uuid = ?";
+            String update_query = "UPDATE backend.devices SET last_seen = ? WHERE uuid = ?";
             PreparedStatement preparedStatement = c.prepareStatement(update_query);
             preparedStatement.setTimestamp(1, new Timestamp(
                     ZonedDateTime.now().toInstant().toEpochMilli()
@@ -91,7 +91,7 @@ public class DBDeviceHandler {
          */
 
         // Device stats over time
-        String deviceStatsOverTimeInsertQuery = "INSERT INTO device_stats_over_time(uuid, timestamp, packet_count, https_packet_count, data_transferred, data_in, data_out) VALUES(?,?,?,?,?,?,?)";
+        String deviceStatsOverTimeInsertQuery = "INSERT INTO backend.device_stats_over_time(uuid, timestamp, packet_count, https_packet_count, data_transferred, data_in, data_out) VALUES(?,?,?,?,?,?,?)";
         try {
             PreparedStatement preparedStatement = c.prepareStatement(deviceStatsOverTimeInsertQuery);
             preparedStatement.setBytes(1, device_wrapper.getUUID());
@@ -105,12 +105,13 @@ public class DBDeviceHandler {
             preparedStatement.setLong(7, device_wrapper.getDataOut());
 
             preparedStatement.execute();
+
         } catch (SQLException e){
             new DBExceptionHandler(e, database_connection_handler);
         }
 
         // Device stats - general count.
-        String deviceStatsUpdateQuery = "UPDATE device_stats SET packet_count = ?, https_packet_count = ?, data_transferred = ?, data_in = ?, data_out = ? where uuid = ?";
+        String deviceStatsUpdateQuery = "UPDATE backend.device_stats SET packet_count = ?, https_packet_count = ?, data_transferred = ?, data_in = ?, data_out = ? where uuid = ?";
         try {
             PreparedStatement preparedStatement = c.prepareStatement(deviceStatsUpdateQuery);
             preparedStatement.setLong(1, device_wrapper.getPacketCount());
@@ -120,7 +121,7 @@ public class DBDeviceHandler {
             preparedStatement.setLong(5, device_wrapper.getDataOut());
             preparedStatement.setBytes(6, device_wrapper.getUUID());
             preparedStatement.executeUpdate();
-        } catch(SQLException e) {
+        } catch (SQLException e){
             new DBExceptionHandler(e, database_connection_handler);
         }
     }
@@ -135,7 +136,7 @@ public class DBDeviceHandler {
         try {
             c.setAutoCommit(false);
             PreparedStatement prepStmt = c.prepareStatement(
-                    "INSERT INTO device_dns_storage(uuid, url) VALUES (?,?) ON CONFLICT DO NOTHING;");
+                    "INSERT INTO backend.device_dns_storage(uuid, url) VALUES (?,?) ON CONFLICT DO NOTHING;");
             Iterator<DnsQuestion> it = device.getDNSQueries().iterator();
             while(it.hasNext()){
                 DnsQuestion p = it.next();
