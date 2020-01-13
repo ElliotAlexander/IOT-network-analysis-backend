@@ -41,9 +41,9 @@ public class DeviceListManager {
         device_list = new ArrayList<>();
         String query = "SELECT m.uuid, m.packet_count, m.https_packet_count, m.data_transferred, m.data_in, m.data_out, t.mx FROM ( " +
                 "SELECT uuid, MAX(timestamp) AS mx " +
-                "FROM device_stats_over_time " +
+                "FROM backend.device_stats_over_time " +
                 "GROUP BY uuid" +
-            ") t JOIN device_stats_over_time m ON m.uuid = t.uuid AND t.mx = m.timestamp;";
+            ") t JOIN backend.device_stats_over_time m ON m.uuid = t.uuid AND t.mx = m.timestamp;";
         try {
             this.c = db_connection_wrapper.getConnection();
             PreparedStatement preparedStatement = c.prepareStatement(query);
