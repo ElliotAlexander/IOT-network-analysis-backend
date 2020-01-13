@@ -73,7 +73,7 @@ public class DeviceUUIDCache {
                 return true;
             } else {
                 // Does the device exist?
-                String query = "SELECT uuid FROM devices WHERE uuid = ? UNION SELECT uuid FROM device_stats WHERE uuid = ?";
+                String query = "SELECT uuid FROM backend.devices WHERE uuid = ? UNION SELECT uuid FROM backend.device_stats WHERE uuid = ?";
                 try {
                     PreparedStatement ps = database_connection_handler.getConnection().prepareStatement(query);
                     ps.setBytes(1, uuid);

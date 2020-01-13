@@ -124,21 +124,6 @@ public class DBDeviceHandler {
         } catch (SQLException e){
             new DBExceptionHandler(e, database_connection_handler);
         }
-
-        // Device stats - general count.
-        String deviceStatsUpdateQuery = "UPDATE device_stats SET packet_count = ?, https_packet_count = ?, data_transferred = ?, data_in = ?, data_out = ? where uuid = ?";
-        try {
-            PreparedStatement preparedStatement = c.prepareStatement(deviceStatsUpdateQuery);
-            preparedStatement.setLong(1, device_wrapper.getPacketCount());
-            preparedStatement.setLong(2, device_wrapper.getHttpsPacketCount());
-            preparedStatement.setLong(3, device_wrapper.getDataTransferred());
-            preparedStatement.setLong(4, device_wrapper.getDataIn());
-            preparedStatement.setLong(5, device_wrapper.getDataOut());
-            preparedStatement.setBytes(6, device_wrapper.getUUID());
-            preparedStatement.executeUpdate();
-        } catch(SQLException e) {
-            new DBExceptionHandler(e, database_connection_handler);
-        }
     }
 
     public void updateDNSQueries(DeviceWrapper device){
