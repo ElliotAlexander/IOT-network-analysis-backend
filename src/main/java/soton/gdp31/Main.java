@@ -2,6 +2,7 @@ package soton.gdp31;
 
 
 import soton.gdp31.config.ConfigLoader;
+import soton.gdp31.exceptions.network.InvalidInterfaceAddressException;
 import soton.gdp31.logger.Logging;
 import soton.gdp31.threads.PacketListenerThread;
 import soton.gdp31.threads.PacketProcessingThread;
@@ -56,18 +57,21 @@ public class Main {
         printInterfaces();
 
         // Setup basic network information.
-        this.SYSTEM_IP = NetworkIdentification.getSystemIp();
-        this.SUBNET_MASK = NetworkIdentification.getNetworkMask();
-        this.GATEWAY_IP = NetworkIdentification.getGatewayIP();
+
         try {
+            this.SYSTEM_IP = NetworkIdentification.getSystemIp();
+            this.SUBNET_MASK = NetworkIdentification.getNetworkMask();
+            this.GATEWAY_IP = NetworkIdentification.getGatewayIP();
             Logging.logInfoMessage("Gateway IP address: " + InetAddress.getByAddress(this.GATEWAY_IP));
             Logging.logInfoMessage("Network Mask: " + InetAddress.getByAddress(this.SUBNET_MASK));
             Logging.logInfoMessage("System IP: " + InetAddress.getByAddress(this.SYSTEM_IP));
         } catch (UnknownHostException e) {
             Logging.logErrorMessage("Error fetching network information.");
             e.printStackTrace();
+        } catch (InvalidInterfaceAddressException e) {
+            Logging.logErrorMessage("Failed to parse network mask.");
+            e.printStackTrace();
         }
-
 
 
         // Start our listening thread.

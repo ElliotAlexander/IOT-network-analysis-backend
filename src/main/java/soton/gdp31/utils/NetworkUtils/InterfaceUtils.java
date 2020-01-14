@@ -4,6 +4,8 @@ import org.pcap4j.core.PcapHandle;
 import org.pcap4j.core.PcapNativeException;
 import org.pcap4j.core.PcapNetworkInterface;
 import org.pcap4j.core.Pcaps;
+import org.pcap4j.util.NifSelector;
+import soton.gdp31.Main;
 import soton.gdp31.exceptions.InterfaceUnknownException;
 import soton.gdp31.logger.Logging;
 
@@ -41,6 +43,17 @@ public class InterfaceUtils {
             int timeout = 1000;
 
             PcapNetworkInterface nif = Pcaps.getDevByName(interface_name);
+
+            if(nif == null){
+                Logging.logInfoMessage("Failed to load from System IP. Attempting to load from display name.");
+                Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
+                for (NetworkInterface netint : Collections.list(nets))
+                    if(netint.getName() == interface_name){
+                        Logging.logInfoMessage("Attempting to load interface " + netint.getName());
+                        nif = Pcaps.getDevByName(netint.getName());
+                    }
+            }
+
             PcapNetworkInterface.PromiscuousMode mode = PcapNetworkInterface.PromiscuousMode.PROMISCUOUS;
             Logging.logInfoMessage("Opening interface " + interface_name);
             PcapHandle handle = nif.openLive(snapLen, mode, timeout);
