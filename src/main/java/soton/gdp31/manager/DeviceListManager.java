@@ -39,11 +39,11 @@ public class DeviceListManager {
      */
     public DeviceListManager(DBConnection db_connection_wrapper){
         device_list = new ArrayList<>();
-        String query = "SELECT m.uuid, m.packet_count, m.https_packet_count, t.mx FROM ( " +
+        String query = "SELECT m.uuid, m.packet_count, m.https_packet_count, m.data_transferred, m.data_in, m.data_out, t.mx FROM ( " +
                 "SELECT uuid, MAX(timestamp) AS mx " +
-                "FROM packet_counts_over_time " +
+                "FROM backend.device_stats_over_time " +
                 "GROUP BY uuid" +
-            ") t JOIN packet_counts_over_time m ON m.uuid = t.uuid AND t.mx = m.timestamp;";
+            ") t JOIN backend.device_stats_over_time m ON m.uuid = t.uuid AND t.mx = m.timestamp;";
         try {
             this.c = db_connection_wrapper.getConnection();
             PreparedStatement preparedStatement = c.prepareStatement(query);
@@ -52,6 +52,9 @@ public class DeviceListManager {
                 DeviceWrapper dw = new DeviceWrapper(rs.getBytes(1));
                 dw.setPacketCount(rs.getInt(2));
                 dw.setHttpsPacketCount(rs.getInt(3));
+                dw.setDataTransferred(rs.getLong(3));
+                dw.setDataIn(rs.getLong(4));
+                dw.setDataOut(rs.getLong(5));
                 device_list.add(dw);
             }
         } catch (SQLException | DBConnectionClosedException e) {

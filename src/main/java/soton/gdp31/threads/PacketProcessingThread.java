@@ -23,12 +23,25 @@ public class PacketProcessingThread extends Thread {
     private DeviceListManager deviceListManager;
 
     public PacketProcessingThread() {
+        while(openConnections() == false){
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    public boolean openConnections(){
         try {
             this.connection_handler = new DBConnection();
             this.deviceListManager = new DeviceListManager(connection_handler);
             this.device_database_handler = new DBDeviceHandler(connection_handler);
+            return true;
         } catch (DBConnectionClosedException e) {
             e.printStackTrace();
+            return false;
         }
     }
 
@@ -60,6 +73,12 @@ public class PacketProcessingThread extends Thread {
                 }
 
                 deviceWrapper.setPacketCount(deviceWrapper.getPacketCount() + 1);
+                deviceWrapper.setDataTransferred(deviceWrapper.getDataTransferred() + p.getPacketSize());
+                if(p.getAssociatedMacAddress() ==  p.getDestMacAddress()){
+                    deviceWrapper.setDataIn(deviceWrapper.getDataIn() + p.getPacketSize());
+                } else {
+                    deviceWrapper.setDataOut(deviceWrapper.getDataOut() + p.getPacketSize());
+                }
 
 
                 if (p.getIsDNSPacket())
