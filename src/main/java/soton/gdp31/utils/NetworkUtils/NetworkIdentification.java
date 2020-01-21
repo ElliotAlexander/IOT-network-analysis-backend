@@ -27,9 +27,9 @@ public class NetworkIdentification {
     }
 
     public static byte[] getNetworkMask() throws InvalidInterfaceAddressException {
-            try{
+            try {
                 NetworkInterface networkInterface = NetworkInterface.getByName(Main.interface_name);
-                Logging.logInfoMessage("Got two netwokr addresses " + networkInterface.getInterfaceAddresses().size());
+                Logging.logInfoMessage("Got two network addresses " + networkInterface.getInterfaceAddresses().size());
                 for(InterfaceAddress address : networkInterface.getInterfaceAddresses()){
                     if(address.getAddress() instanceof Inet4Address){
                         Logging.logInfoMessage("Found correct address " + address.getAddress());
@@ -48,7 +48,7 @@ public class NetworkIdentification {
                 }
                 return null;
 
-            }catch(UnknownHostException e){
+            } catch(UnknownHostException e){
                 System.out.println("Error: "+ e);
                 return new byte[]{};
             } catch (SocketException e) {
