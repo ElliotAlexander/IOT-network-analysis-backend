@@ -42,10 +42,20 @@ public class InterfaceUtils {
             int snapLen = 65536;
             int timeout = 1000;
 
-            PcapNetworkInterface nif = Pcaps.getDevByName(interface_name);
+
+            PcapNetworkInterface nif;
+            if(Main.debug_network){
+                Logging.logInfoMessage("Using network debug mode to select network interface.");
+                nif = new NifSelector().selectNetworkInterface();
+            } else {
+                nif = Pcaps.getDevByName(Main.interface_name);
+            }
+
+            System.out.println(nif.getName() + " (" + nif.getDescription() + ")");
+
 
             if(nif == null){
-                Logging.logInfoMessage("Failed to load from System IP. Attempting to load from display name.");
+                Logging.logInfoMessage("Failed to open network interface by System IP.");
                 Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
                 for (NetworkInterface netint : Collections.list(nets))
                     if(netint.getName() == interface_name){
@@ -54,8 +64,10 @@ public class InterfaceUtils {
                     }
             }
 
+
+
             PcapNetworkInterface.PromiscuousMode mode = PcapNetworkInterface.PromiscuousMode.PROMISCUOUS;
-            Logging.logInfoMessage("Opening interface " + interface_name);
+            Logging.logInfoMessage("Opening interface " + nif.getName());
             PcapHandle handle = nif.openLive(snapLen, mode, timeout);
             Logging.logInfoMessage("Successfully opened interface on " + interface_name);
             return handle;

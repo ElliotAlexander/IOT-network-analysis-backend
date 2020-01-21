@@ -18,18 +18,18 @@ public class NetworkIdentification {
 
     public static byte[] getSystemIp(){
         try {
-            InetAddress localhost = InetAddress.getLocalHost();
-            return localhost.getAddress();
-        } catch (UnknownHostException e) {
+            NetworkInterface networkInterface = NetworkInterface.getByName(Main.interface_name);
+            return networkInterface.getInterfaceAddresses().get(0).getAddress().getAddress();
+        } catch (SocketException e) {
             e.printStackTrace();
-            return new byte[]{};
         }
+        return new byte[]{};
     }
 
     public static byte[] getNetworkMask() throws InvalidInterfaceAddressException {
             try{
                 NetworkInterface networkInterface = NetworkInterface.getByName(Main.interface_name);
-                Logging.logInfoMessage("Got two netwokr addresses " + networkInterface.getInterfaceAddresses().size());
+                Logging.logInfoMessage("Got two network addresses " + networkInterface.getInterfaceAddresses().size());
                 for(InterfaceAddress address : networkInterface.getInterfaceAddresses()){
                     if(address.getAddress() instanceof Inet4Address){
                         Logging.logInfoMessage("Found correct address " + address.getAddress());

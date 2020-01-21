@@ -1,6 +1,11 @@
 package soton.gdp31;
 
 
+import org.pcap4j.core.PcapAddress;
+import org.pcap4j.core.PcapNativeException;
+import org.pcap4j.core.PcapNetworkInterface;
+import org.pcap4j.core.Pcaps;
+import org.pcap4j.util.NifSelector;
 import soton.gdp31.config.ConfigLoader;
 import soton.gdp31.exceptions.network.InvalidInterfaceAddressException;
 import soton.gdp31.logger.Logging;
@@ -33,7 +38,8 @@ public class Main {
             "pcap_dump_file",
             "pcap_dump_enabled",
             "logfile_output",
-            "logfile_enabled"
+            "logfile_enabled",
+            "debug_network"
     };
 
     // Loadable configuration options.
@@ -42,6 +48,7 @@ public class Main {
     public static boolean pcap_dump_enabled;
     public static String logfile_output;
     public static boolean logfile_enabled;
+    public static boolean debug_network;
 
     public static final int PPT_THREAD_COUNT = 1;
 
@@ -54,6 +61,16 @@ public class Main {
         // load our config file
         Properties prop = ConfigLoader.instance.loadConfig("config.txt");
         setupConfigurationOptions(prop);
+
+
+
+        String path = System.getProperty("jna.library.path");
+        if (path == null || path.isEmpty()) {
+            path = "C:/Windows/System32/Npcap";
+        } else {
+            path += ";C:/Windows/System32/Npcap";
+        }
+        System.setProperty("jna.library.path", path);
         printInterfaces();
 
         // Setup basic network information.
@@ -65,6 +82,7 @@ public class Main {
             Logging.logInfoMessage("Gateway IP address: " + InetAddress.getByAddress(this.GATEWAY_IP));
             Logging.logInfoMessage("Network Mask: " + InetAddress.getByAddress(this.SUBNET_MASK));
             Logging.logInfoMessage("System IP: " + InetAddress.getByAddress(this.SYSTEM_IP));
+
         } catch (UnknownHostException e) {
             Logging.logErrorMessage("Error fetching network information.");
             e.printStackTrace();
@@ -73,9 +91,8 @@ public class Main {
             e.printStackTrace();
         }
 
-
         // Start our listening thread.
-        Logging.logInfoMessage("Starting packet listner thread");
+        Logging.logInfoMessage("Starting packet listener thread");
         PacketListenerThread plt = new PacketListenerThread();
         plt.start();
 
@@ -148,7 +165,7 @@ public class Main {
                     this.getClass().getField(option).set(this, props.getProperty(option));
                     Logging.logInfoMessage("Loaded String config option " + option + " with value " + this.getClass().getField(option).get(this));
                 } else {
-                    this.getClass().getField(option).set(this, props.getProperty(option) == "true" ? true : false);
+                    this.getClass().getField(option).set(this, Boolean.valueOf(props.getProperty(option)));
                     Logging.logInfoMessage("Loaded boolean configuration option " + option + " with value " + this.getClass().getField(option).get(this));
                 }
             } catch (NoSuchFieldException e) {
