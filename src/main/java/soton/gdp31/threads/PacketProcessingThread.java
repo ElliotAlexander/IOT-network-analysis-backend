@@ -1,5 +1,8 @@
 package soton.gdp31.threads;
 
+import main.java.soton.gdp31.database.DBScanHandler;
+import main.java.soton.gdp31.utils.PortScanning.PortScanResult;
+import main.java.soton.gdp31.utils.PortScanning.PortScanner;
 import soton.gdp31.database.DBConnection;
 import soton.gdp31.database.DBDeviceHandler;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
@@ -9,6 +12,8 @@ import soton.gdp31.utils.NetworkUtils.HostnameFetcher;
 import soton.gdp31.utils.PacketProcessingQueue;
 import soton.gdp31.wrappers.DeviceWrapper;
 import soton.gdp31.wrappers.PacketWrapper;
+
+import java.util.ArrayList;
 
 /**
  * @Author Elliot Alexander
@@ -21,6 +26,8 @@ public class PacketProcessingThread extends Thread {
     private DBConnection connection_handler;
     private DBDeviceHandler device_database_handler;
     private DeviceListManager deviceListManager;
+
+    private DBScanHandler scan_database_handler;
 
     public PacketProcessingThread() {
         while(openConnections() == false){
@@ -38,6 +45,8 @@ public class PacketProcessingThread extends Thread {
             this.connection_handler = new DBConnection();
             this.deviceListManager = new DeviceListManager(connection_handler);
             this.device_database_handler = new DBDeviceHandler(connection_handler);
+
+            this.scan_database_handler = new DBScanHandler(connection_handler);
             return true;
         } catch (DBConnectionClosedException e) {
             e.printStackTrace();
@@ -98,8 +107,26 @@ public class PacketProcessingThread extends Thread {
                 DeviceWrapper device = deviceListManager.addDevice(p.getUUID());
                 System.out.println("Hostname: " + HostnameFetcher.fetchHostname(p.getSrcIp()));
                 device_database_handler.updatePacketCounts(device, System.currentTimeMillis());
+
+                // Scan ports initially.
+                scanPorts(p, true);
             }
 
+        }
+    }
+
+    public void scanPorts(PacketWrapper p, boolean initial){
+        PortScanner scanner = new PortScanner();
+        String device_ip_address = p.getSrcIp();
+
+        ArrayList<PortScanResult> results = scanner.scan_device_ports(device_ip_address);
+
+        String string_for_db = scanner.extract_list_of_open_ports(results);
+
+        if(initial){
+            scan_database_handler.addToDatabase(p.getUUID(), string_for_db);
+        } else {
+            scan_database_handler.updateDatabase(p.getUUID(), string_for_db);
         }
     }
 }

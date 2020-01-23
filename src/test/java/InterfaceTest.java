@@ -20,9 +20,9 @@ import static org.junit.Assert.*;
  *
  */
 class InterfaceTest {
+    /*
 
     private PcapHandle ph;
-
     @BeforeEach
     public void setupPcapHandle() throws Exception {
         ph = Pcaps.openOffline("src/test/resources/example.pcap");
@@ -50,4 +50,6 @@ class InterfaceTest {
         assertEquals(pw.getSrcIp(), "2.1.1.2");
         assertEquals(pw.getProtocol_type(), ProtocolType.UNKNOWN);
     }
+
+     */
 }
