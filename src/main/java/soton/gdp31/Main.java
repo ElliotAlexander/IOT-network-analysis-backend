@@ -73,6 +73,7 @@ public class Main {
             e.printStackTrace();
         }
 
+        // Instantiate
 
         // Start our listening thread.
         Logging.logInfoMessage("Starting packet listner thread");

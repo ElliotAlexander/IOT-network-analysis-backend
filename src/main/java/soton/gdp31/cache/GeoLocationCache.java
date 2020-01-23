@@ -146,6 +146,7 @@ public class GeoLocationCache {
                 // Device doesn't have ip address.
                 uuid_locations.put(ip_address, location);
             }
+            Logging.logInfoMessage("Location stored: " + location.getLatitude() + ", " + location.getLongitude());
         } else {
             // Device does not exist.
 
@@ -160,7 +161,6 @@ public class GeoLocationCache {
             //Logging.logWarnMessage("GeoLocation Cache does not contain device UUID: " + device_uuid);
         }
 
-        pushCacheToDatabase();
     }
 
 

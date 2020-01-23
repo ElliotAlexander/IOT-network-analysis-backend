@@ -1,47 +1,60 @@
 package soton.gdp31.database;
 
+import java.time.ZonedDateTime;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+
+import soton.gdp31.exceptions.database.DBConnectionClosedException;
+import soton.gdp31.utils.GeoIpLocation.GeoLocation;
+import soton.gdp31.utils.GeoIpLocation.LocationFinder;
 
 public class DBLocationHandler {
 
-    private final DBConnection database_connection_handler;
-    private connection c;
+    private final soton.gdp31.database.DBConnection database_connection_handler;
+    private Connection c;
+    private LocationFinder finder;
 
-    public DBLocationHandler(DBConnection database_connection_handler) throws DBConnectionClosedException {
+    public DBLocationHandler(soton.gdp31.database.DBConnection database_connection_handler) throws DBConnectionClosedException {
         this.database_connection_handler = database_connection_handler;
         this.c = database_connection_handler.getConnection();
+        this.finder = new LocationFinder();
     }
 
-    public void addToDatabase(String ipAddress) {
-        // Location is added here.
-        GeoLocation location = LookUpService.lookup(ipAddress);
-        final float LATITUDE = location.latitude;
-        final float LONGITUDE = location.longitude;
+    public void addToDatabase(byte[] uuid, String ipAddress, GeoLocation geoLocation) {
+        final Double LATITUDE = geoLocation.getLatitude();
+        final Double LONGITUDE = geoLocation.getLongitude();
 
 
 
 
         try {
             String insert_query = "INSERT INTO ip_address_location(" +
-                    "ip_address, latitude, longitude, last_scanned" +
-                    " VALUES(?,?,?,?)";
+                    "uuid, ip_address, latitude, longitude, last_scanned" +
+                    " VALUES(?,?,?,?,?)";
             PreparedStatement preparedStatement = c.prepareStatement(insert_query);
-            preparedStatement.setString(1, ipAddress);
-            preparedStatement.setLong(2, (long) LATITUDE);
-            preparedStatement.setLong(3, (long) LONGITUDE);
-            preparedStatement.setTimestamp(4, new Timestamp(
+            preparedStatement.setBytes(1, uuid);
+            preparedStatement.setString(2, ipAddress);
+            preparedStatement.setDouble(3, LATITUDE);
+            preparedStatement.setDouble(4, LONGITUDE);
+            preparedStatement.setTimestamp(5, new Timestamp(
                     ZonedDateTime.now().toInstant().toEpochMilli()
             ));
         } catch (SQLException e) {
-            new DBExceptionHandler(e, database_connection_handler);
+            new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
         }
     }
 
 
-    public void update(String ipAddress) {
-
-        GeoLocation location = LookUpService.lookup(ipAddress);
-        final float LATITUDE = location.latitude;
-        final float LONGITUDE = location.longitude;
+    public void update(String ipAddress, GeoLocation geoLocation) {
+        // Location is added here.
+        final Double LATITUDE = geoLocation.getLatitude();
+        final Double LONGITUDE = geoLocation.getLongitude();
 
         try {
             String update_query = "UPDATE ip_address_location SET last_scanned = ?, latitude = ?, longitude = ? WHERE ip_address = ?";
@@ -49,12 +62,12 @@ public class DBLocationHandler {
             preparedStatement.setTimestamp(1, new Timestamp(
                     ZonedDateTime.now().toInstant().toEpochMilli()
             ));
-            preparedStatement.setLong(2, (long) LATITUDE);
-            preparedStatement.setLong(3, (long) LONGITUDE);
+            preparedStatement.setDouble(2, LATITUDE);
+            preparedStatement.setDouble(3, LONGITUDE);
             preparedStatement.setString(4, ipAddress);
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            new DBExceptionHandler(e, database_connection_handler);
+            new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
         }
     }
 }

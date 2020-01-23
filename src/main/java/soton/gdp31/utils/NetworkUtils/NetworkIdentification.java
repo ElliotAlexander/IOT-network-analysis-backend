@@ -43,7 +43,8 @@ public class NetworkIdentification {
                         return maskIP.getAddress();
                     } else {
                         Logging.logInfoMessage("Added ipv6 address");
-                        throw new InvalidInterfaceAddressException("Failed to load interface with valid IPv4 address. Is your address ipv6 only?");
+                        Logging.logWarnMessage("Failed to load interface with valid IPv4 address. Is your address ipv6 only?");
+                        continue;
                     }
                 }
                 return null;

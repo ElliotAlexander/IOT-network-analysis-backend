@@ -23,6 +23,7 @@ class InterfaceTest {
 
     private PcapHandle ph;
 
+    /*
     @BeforeEach
     public void setupPcapHandle() throws Exception {
         ph = Pcaps.openOffline("src/test/resources/example.pcap");
@@ -30,6 +31,7 @@ class InterfaceTest {
         Main.SUBNET_MASK = NetworkIdentification.getNetworkMask();
         Main.GATEWAY_IP = NetworkIdentification.getGatewayIP();
     }
+
 
     @Test
     public void validateInitialPacket() throws Exception {
@@ -50,4 +52,7 @@ class InterfaceTest {
         assertEquals(pw.getSrcIp(), "2.1.1.2");
         assertEquals(pw.getProtocol_type(), ProtocolType.UNKNOWN);
     }
+
+
+     */
 }

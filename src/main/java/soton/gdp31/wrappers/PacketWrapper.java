@@ -49,6 +49,9 @@ public class PacketWrapper {
 
     private byte[] uuid;
 
+    private boolean is_locationable = false;
+    private String location_address;
+
     public PacketWrapper(EthernetPacket p, long timestamp, long packet_count) throws InvalidIPPacketException {
 
         this.timestamp = timestamp;
@@ -116,11 +119,19 @@ public class PacketWrapper {
                     DeviceHostnameCache.instance.addDevice(dest_hostname, uuid, false);
                     associated_mac_address = dest_mac_address;
                     associated_hostname = dest_hostname;
+
+                    // In this case, src_ip is the external one.
+                    this.is_locationable = true;
+                    this.location_address = src_ip;
                 } else {
                     this.uuid = UUIDGenerator.generateUUID(src_mac_address);
                     DeviceHostnameCache.instance.addDevice(src_hostname, uuid, true);
                     associated_mac_address = src_mac_address;
                     associated_hostname = src_hostname;;
+
+                    // In this case, dest_ip is the external one.
+                    this.is_locationable = true;
+                    this.location_address = dest_ip;
                 }
 
                 if (this.uuid == null) {
@@ -245,5 +256,13 @@ public class PacketWrapper {
 
     public String getDestMacAddress(){
         return this.dest_mac_address;
+    }
+
+    public String getLocation_address(){
+        return this.location_address;
+    }
+
+    public boolean isLocationable(){
+        return this.is_locationable;
     }
 }
