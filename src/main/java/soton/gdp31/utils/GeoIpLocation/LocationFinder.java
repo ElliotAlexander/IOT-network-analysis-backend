@@ -63,8 +63,16 @@ public class LocationFinder {
             Logging.logWarnMessage("Reading the City Database has failed.");
             ioe.printStackTrace();
         } catch (GeoIp2Exception geoipe) {
-            Logging.logInfoMessage("GeoIP2 Exception has been thrown");
-            geoipe.printStackTrace();
+            try {
+                if(InetAddress.getByName(ipAddress).isAnyLocalAddress()){
+                    Logging.logInfoMessage("Attempted to GeoLocate a local address.");
+                } else {
+                    Logging.logInfoMessage("GeoIP2 Exception has been thrown");
+                    geoipe.printStackTrace();
+                }
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
             // TODO: Failed GeoLocation.
         }
         return null;
@@ -90,7 +98,7 @@ public class LocationFinder {
             Long last_scanned = System.currentTimeMillis();
             // Build returnable.
             GeoLocation returnable = new GeoLocation(response, last_scanned);
-
+            Logging.logInfoMessage("GeoLocated an address at: " + ip_address.getHostName());
             return returnable;
         } catch (UnknownHostException uhe){
             Logging.logWarnMessage("Failed to location host.");
@@ -99,10 +107,15 @@ public class LocationFinder {
             Logging.logWarnMessage("Reading the City Database has failed.");
             ioe.printStackTrace();
         } catch (GeoIp2Exception geoipe) {
-            Logging.logInfoMessage("GeoIP2 Exception has been thrown");
-            geoipe.printStackTrace();
+            if(ip_address.isAnyLocalAddress()){
+                Logging.logInfoMessage("Attempted to GeoLocate a local address.");
+            } else {
+                Logging.logInfoMessage("GeoIP2 Exception has been thrown");
+                geoipe.printStackTrace();
+            }
             // TODO: Failed GeoLocation.
         }
         return null;
     }
+
 }

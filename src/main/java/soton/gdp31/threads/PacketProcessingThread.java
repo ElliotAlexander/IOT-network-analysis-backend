@@ -93,7 +93,7 @@ public class PacketProcessingThread extends Thread {
                     deviceWrapper.setDataOut(deviceWrapper.getDataOut() + p.getPacketSize());
                 }
 
-
+                // Location provider.
                 if(p.isLocationable()){
                     // Set device UUID.
                     byte[] device_uuid = p.getUUID();
@@ -108,7 +108,9 @@ public class PacketProcessingThread extends Thread {
                         // Look up the address.
                         GeoLocation location = locationFinder.lookup(location_address);
                         // Store the location in the cache.
-                        geoLocationCache.storeLocation(device_uuid, location_address, location);
+                        if(location != null) {
+                            geoLocationCache.storeLocation(device_uuid, location_address, location);
+                        }
                     } else { // Device has contacted it before in the Cache.
                             // Do nothing.
                     }
