@@ -105,8 +105,11 @@ public class PacketWrapper {
         } else {
             try {
                 if( NetworkIdentification.ipToLong(dest_ip_bytes) >= NetworkIdentification.ipToLong(InetAddress.getByName("239.0.0.0"))
+                        || NetworkIdentification.ipToLong(src_ip_bytes) >= NetworkIdentification.ipToLong(InetAddress.getByName("239.0.0.0"))
                         || dest_ip_bytes == InetAddress.getByAddress(Main.BROADCAST_SUBNET_ADDRESS)
-                        || this.dest_ip == "0.0.0.0"){
+                        || src_ip_bytes == InetAddress.getByAddress(Main.BROADCAST_SUBNET_ADDRESS)
+                        || this.dest_ip == "0.0.0.0"
+                        || this.src_ip == "0.0.0.0"){
                     this.is_broadcast_traffic = true;
                 }
             } catch (UnknownHostException e) {
@@ -172,6 +175,8 @@ public class PacketWrapper {
                         throw new UnhandledTrafficException("Unable to identify IPv6 traffic.");
                     } else {
                         Logging.logErrorMessage("Unknown packet!");
+                        Logging.logInfoMessage("Src ip:" + this.src_ip);
+                        Logging.logInfoMessage("Dest ip: " + this.dest_ip);
                     }
                 }
 
