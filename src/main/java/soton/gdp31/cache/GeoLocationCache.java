@@ -77,7 +77,7 @@ public class GeoLocationCache {
 
         if(devices_contacted_ip.isEmpty()){
             // Check database.
-            String query = "SELECT latitude, longitude, last_scanned FROM ip_address_location WHERE ip_address = ?";
+            String query = "SELECT latitude, longitude, last_scanned FROM backend.ip_address_location WHERE ip_address = ?";
             try {
                 PreparedStatement ps = database_connection_handler.getConnection().prepareStatement(query);
                 ps.setString(1, given_ip_address);
@@ -181,15 +181,15 @@ public class GeoLocationCache {
                     Long last_scanned = location.getLast_scanned();
 
                     String query =
-                            "BEGIN" +
-                                "IF NOT EXISTS (SELECT * FROM ip_address_location" +
-                                                "WHERE uuid = ?" +
-                                                "AND ip_address = ?)" +
-                                "BEGIN" +
-                                    "INSERT INTO ip_address_location (uuid, ip_address, latitude, longitude, last_scanned)" +
-                                    "VALUES (?,?,?,?,?)" +
-                                "END"+
-                            "END";
+                            "BEGIN " +
+                                "IF NOT EXISTS (SELECT * FROM ip_address_location " +
+                                                "WHERE uuid = ? " +
+                                                "AND ip_address = ?) " +
+                                "BEGIN " +
+                                    "INSERT INTO ip_address_location (uuid, ip_address, latitude, longitude, last_scanned) " +
+                                    "VALUES (?,?,?,?,?) " +
+                                "END "+
+                            "END ";
                     try {
                         PreparedStatement ps = database_connection_handler.getConnection().prepareStatement(query);
 

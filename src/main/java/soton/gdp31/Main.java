@@ -11,13 +11,10 @@ import soton.gdp31.utils.NetworkUtils.NetworkIdentification;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
+import java.util.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.UnknownHostException;
-import java.util.Properties;
 
 public class Main {
 
@@ -26,6 +23,7 @@ public class Main {
     public static byte[] SYSTEM_IP;
     public static byte[] GATEWAY_IP;
     public static byte[] SUBNET_MASK;
+    public static byte[] BROADCAST_SUBNET_ADDRESS;
 
     // This is a list of the configuration options we'll declare below, and load from the config file.
     private static final String configOptions[] = {
@@ -62,9 +60,11 @@ public class Main {
             this.SYSTEM_IP = NetworkIdentification.getSystemIp();
             this.SUBNET_MASK = NetworkIdentification.getNetworkMask();
             this.GATEWAY_IP = NetworkIdentification.getGatewayIP();
+            this.BROADCAST_SUBNET_ADDRESS = NetworkIdentification.getMaxIpValue(this.GATEWAY_IP, this.SUBNET_MASK);
             Logging.logInfoMessage("Gateway IP address: " + InetAddress.getByAddress(this.GATEWAY_IP));
             Logging.logInfoMessage("Network Mask: " + InetAddress.getByAddress(this.SUBNET_MASK));
             Logging.logInfoMessage("System IP: " + InetAddress.getByAddress(this.SYSTEM_IP));
+            Logging.logInfoMessage("Broadcast Subnet Address: " + InetAddress.getByAddress(this.BROADCAST_SUBNET_ADDRESS));
         } catch (UnknownHostException e) {
             Logging.logErrorMessage("Error fetching network information.");
             e.printStackTrace();

@@ -26,6 +26,16 @@ public class NetworkIdentification {
         }
     }
 
+    public static long ipToLong(InetAddress ip) {
+        byte[] octets = ip.getAddress();
+        long result = 0;
+        for (byte octet : octets) {
+            result <<= 8;
+            result |= octet & 0xff;
+        }
+        return result;
+    }
+
     public static byte[] getNetworkMask() throws InvalidInterfaceAddressException {
             try{
                 NetworkInterface networkInterface = NetworkInterface.getByName(Main.interface_name);
@@ -199,5 +209,38 @@ public class NetworkIdentification {
         }
 
         return true;
+    }
+
+    public static byte[] getMaxIpValue(byte[] ip_addr, byte[] networkMask ){
+        byte[] returnVal = new byte[ip_addr.length];
+        byte[] returnVal2 = new byte[ip_addr.length];
+
+        try {
+            for (int i = 0; i < ip_addr.length; i++)
+                returnVal[i] = new Integer(ip_addr[i] & networkMask[i]).byteValue();
+
+            for (int i = 0; i < ip_addr.length; i++)
+                returnVal2[i] = new Integer(ip_addr[i] | ~networkMask[i]).byteValue();
+        } catch (Exception e){
+            Logging.logErrorMessage("Error loading max ip subnet.");
+            e.printStackTrace();
+            return returnVal;
+        }
+        return returnVal2;
+
+    }
+
+    public static byte[] getSubnetRoot(byte[] ip_addr, byte[] networkMask ){
+        byte[] returnVal = new byte[ip_addr.length];
+        try {
+            for (int i = 0; i < ip_addr.length; i++)
+                returnVal[i] = new Integer(ip_addr[i] & networkMask[i]).byteValue();
+        } catch (Exception e){
+            Logging.logErrorMessage("Error loading max ip subnet.");
+            e.printStackTrace();
+            return returnVal;
+        }
+        return returnVal;
+
     }
 }
