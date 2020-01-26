@@ -32,7 +32,10 @@ public class Main {
             "pcap_dump_file",
             "pcap_dump_enabled",
             "logfile_output",
-            "logfile_enabled"
+            "logfile_enabled",
+            "hardcode_system_ip",
+            "hardcode_subnet_mask",
+            "hardcode_gateway_ip",
     };
 
     // Loadable configuration options.
@@ -41,6 +44,10 @@ public class Main {
     public static boolean pcap_dump_enabled;
     public static String logfile_output;
     public static boolean logfile_enabled;
+
+    public static String hardcode_system_ip;
+    public static String hardcode_subnet_mask;
+    public static String hardcode_gateway_ip;
 
     public static final int PPT_THREAD_COUNT = 1;
 
@@ -56,9 +63,9 @@ public class Main {
         printInterfaces();
 
         // Setup basic network information.
-        this.SYSTEM_IP = NetworkIdentification.getSystemIp();
-        this.SUBNET_MASK = NetworkIdentification.getNetworkMask();
-        this.GATEWAY_IP = NetworkIdentification.getGatewayIP();
+        this.SYSTEM_IP = hardcode_system_ip == null ? NetworkIdentification.getSystemIp() : hardcode_system_ip.getBytes();
+        this.SUBNET_MASK = hardcode_subnet_mask == null ? NetworkIdentification.getNetworkMask() : hardcode_subnet_mask.getBytes();
+        this.GATEWAY_IP = hardcode_gateway_ip == null ? NetworkIdentification.getGatewayIP() : hardcode_gateway_ip.getBytes();
         try {
             Logging.logInfoMessage("Gateway IP address: " + InetAddress.getByAddress(this.GATEWAY_IP));
             Logging.logInfoMessage("Network Mask: " + InetAddress.getByAddress(this.SUBNET_MASK));
