@@ -8,6 +8,8 @@ import soton.gdp31.Main;
 import soton.gdp31.cache.DeviceHostnameCache;
 import soton.gdp31.enums.ProtocolType;
 import soton.gdp31.exceptions.InvalidIPPacketException;
+import soton.gdp31.exceptions.devices.IPv6DeviceException;
+import soton.gdp31.exceptions.devices.UnknownDeviceException;
 import soton.gdp31.exceptions.network.UnhandledTrafficException;
 import soton.gdp31.logger.Logging;
 import soton.gdp31.utils.NetworkUtils.HostnameFetcher;
@@ -58,7 +60,7 @@ public class PacketWrapper {
 
     private boolean is_packet_interesting = false;
 
-    public PacketWrapper(EthernetPacket p, long timestamp, long packet_count) throws InvalidIPPacketException, UnhandledTrafficException {
+    public PacketWrapper(EthernetPacket p, long timestamp, long packet_count) throws InvalidIPPacketException, UnhandledTrafficException, IPv6DeviceException {
 
         this.timestamp = timestamp;
         this.packet_count = packet_count;
@@ -175,7 +177,9 @@ public class PacketWrapper {
 
                 if (this.uuid == null) {
                     Logging.logErrorMessage("Failed to generate UUID for packet.");
-                    throw new NoSuchAlgorithmException();
+                    if(this.isIPv6){
+                        throw new IPv6DeviceException();
+                    }
                 }
             } catch(NoSuchAlgorithmException e) {
                 Logging.logErrorMessage("Error initialising connections for device " + src_mac_address);
