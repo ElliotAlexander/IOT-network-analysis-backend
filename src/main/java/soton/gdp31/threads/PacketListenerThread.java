@@ -6,6 +6,7 @@ import org.pcap4j.packet.*;
 import soton.gdp31.Main;
 import soton.gdp31.exceptions.InterfaceUnknownException;
 import soton.gdp31.exceptions.InvalidIPPacketException;
+import soton.gdp31.exceptions.network.UnhandledTrafficException;
 import soton.gdp31.logger.Logging;
 import soton.gdp31.utils.NetworkUtils.InterfaceUtils;
 import soton.gdp31.utils.PacketProcessingQueue;
@@ -60,6 +61,8 @@ public class PacketListenerThread extends Thread {
             } catch (ClassCastException e){
                 e.printStackTrace();
                 Logging.logErrorMessage("Skipping non-ethernet packet");
+            } catch (UnhandledTrafficException e) {
+                continue;
             }
         }
     }

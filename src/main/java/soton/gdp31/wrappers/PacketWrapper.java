@@ -8,6 +8,7 @@ import soton.gdp31.Main;
 import soton.gdp31.cache.DeviceHostnameCache;
 import soton.gdp31.enums.ProtocolType;
 import soton.gdp31.exceptions.InvalidIPPacketException;
+import soton.gdp31.exceptions.network.UnhandledTrafficException;
 import soton.gdp31.logger.Logging;
 import soton.gdp31.utils.NetworkUtils.HostnameFetcher;
 import soton.gdp31.utils.NetworkUtils.NetworkIdentification;
@@ -20,6 +21,7 @@ import java.util.List;
 public class PacketWrapper {
 
     private boolean isIpPacket;
+    private boolean isIPv6 = false;
     private int srcPort, destPort;
     private InetAddress src_ip_bytes, dest_ip_bytes;
 
@@ -56,7 +58,7 @@ public class PacketWrapper {
 
     private boolean is_packet_interesting = false;
 
-    public PacketWrapper(EthernetPacket p, long timestamp, long packet_count) throws InvalidIPPacketException {
+    public PacketWrapper(EthernetPacket p, long timestamp, long packet_count) throws InvalidIPPacketException, UnhandledTrafficException {
 
         this.timestamp = timestamp;
         this.packet_count = packet_count;
@@ -66,10 +68,14 @@ public class PacketWrapper {
 
         this.isIpPacket = p.contains(IpPacket.class);
         IpPacket ipPacket = p.get(IpPacket.class);
+        if(ipPacket instanceof IpV6Packet){
+            this.isIPv6 = true;
+        }
 
         if(ipPacket == null) {
             throw new InvalidIPPacketException();
         }
+
         this.src_ip = ipPacket.getHeader().getSrcAddr().getHostAddress();
         this.dest_ip = ipPacket.getHeader().getDstAddr().getHostAddress();
         this.src_ip_bytes = ipPacket.getHeader().getSrcAddr();
@@ -85,19 +91,31 @@ public class PacketWrapper {
             dest_hostname = HostnameFetcher.fetchHostname(src_ip);
         }
 
-        try {
-            if( NetworkIdentification.ipToLong(dest_ip_bytes) >= NetworkIdentification.ipToLong(InetAddress.getByName("239.0.0.0"))
-            || dest_ip_bytes == InetAddress.getByAddress(Main.BROADCAST_SUBNET_ADDRESS)
-            || this.dest_ip == "0.0.0.0"){
-                this.is_broadcast_traffic = true;
+        if(this.isIPv6){
+            try {
+                if(NetworkIdentification.ipToLong(dest_ip_bytes) >= NetworkIdentification.ipToLong(InetAddress.getByName("fe80::"))
+                || NetworkIdentification.ipToLong(dest_ip_bytes) <= NetworkIdentification.ipToLong(InetAddress.getByName("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"))) {
+                    Logging.logInfoMessage("Identified ipv6 broadcast traffic");
+                }
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
             }
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
+        } else {
+            try {
+                if( NetworkIdentification.ipToLong(dest_ip_bytes) >= NetworkIdentification.ipToLong(InetAddress.getByName("239.0.0.0"))
+                        || dest_ip_bytes == InetAddress.getByAddress(Main.BROADCAST_SUBNET_ADDRESS)
+                        || this.dest_ip == "0.0.0.0"){
+                    this.is_broadcast_traffic = true;
+                }
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
         }
+
 
         if(this.is_broadcast_traffic) {
             try {
-                if (this.src_ip != "0.0.0.0") {
+                if (this.src_ip != "0.0.0.0" && this.src_ip != "0:0:0:0:0:0:0:0") {
                     this.uuid = UUIDGenerator.generateUUID(src_mac_address);
                     associated_mac_address = src_mac_address;
                     associated_hostname = src_hostname;
@@ -147,7 +165,12 @@ public class PacketWrapper {
                     this.is_locationable = true;
                     this.location_address = dest_ip;
                 } else {
-                    Logging.logWarnMessage("Ignoring packet");
+                    if(this.isIPv6){
+                        Logging.logInfoMessage("Unable to identify IPv6 traffic.");
+                        throw new UnhandledTrafficException("Unable to identify IPv6 traffic.");
+                    } else {
+                        Logging.logErrorMessage("Unknown packet!");
+                    }
                 }
 
                 if (this.uuid == null) {
