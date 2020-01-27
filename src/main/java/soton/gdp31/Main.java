@@ -64,9 +64,9 @@ public class Main {
         // Setup basic network information.
 
         try {
-            this.SYSTEM_IP = hardcode_system_ip == null ? NetworkIdentification.getSystemIp() : hardcode_system_ip.getBytes();
-            this.SUBNET_MASK = hardcode_subnet_mask == null ? NetworkIdentification.getNetworkMask() : hardcode_subnet_mask.getBytes();
-            this.GATEWAY_IP = hardcode_gateway_ip == null ? NetworkIdentification.getGatewayIP() : hardcode_gateway_ip.getBytes();
+            this.SYSTEM_IP = hardcode_system_ip == null ? NetworkIdentification.getSystemIp() : InetAddress.getByName(hardcode_system_ip).getAddress();
+            this.SUBNET_MASK = hardcode_subnet_mask == null ? NetworkIdentification.getNetworkMask() :  InetAddress.getByName(hardcode_subnet_mask).getAddress();
+            this.GATEWAY_IP = hardcode_gateway_ip == null ? NetworkIdentification.getGatewayIP() :  InetAddress.getByName(hardcode_gateway_ip).getAddress();
             this.BROADCAST_SUBNET_ADDRESS = NetworkIdentification.getMaxIpValue(this.GATEWAY_IP, this.SUBNET_MASK);
             Logging.logInfoMessage("Gateway IP address: " + InetAddress.getByAddress(this.GATEWAY_IP));
             Logging.logInfoMessage("Network Mask: " + InetAddress.getByAddress(this.SUBNET_MASK));
