@@ -101,7 +101,6 @@ public class PacketProcessingThread extends Thread {
                     String location_address = p.getLocation_address();
 
                     // Has this address been located before, within a list.
-                    Logging.logInfoMessage("Starting location");
                     Boolean address_has_located = geoLocationCache.needsLocating(device_uuid, location_address);
 
                     if(address_has_located){
@@ -109,6 +108,7 @@ public class PacketProcessingThread extends Thread {
                         GeoLocation location = locationFinder.lookup(location_address);
                         // Store the location in the cache.
                         if(location != null) {
+                            Logging.logInfoMessage("Storing location.....   LAT: " + location.getLatitude().toString() + " | LONG: " + location.getLongitude().toString());
                             geoLocationCache.storeLocation(device_uuid, location_address, location);
                         } else {
                             Logging.logWarnMessage("Failed to locate error for " + location_address);

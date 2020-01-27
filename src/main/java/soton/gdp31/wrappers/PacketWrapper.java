@@ -145,13 +145,11 @@ public class PacketWrapper {
                 try {
                     if (is_internal_traffic) {      // Is the traffic purely internal? Or is just the source internal
                         if (this.src_ip_bytes.getAddress() == Main.GATEWAY_IP) {         // Internal traffic coming from the router
-                            Logging.logInfoMessage("Internal traffic coming from the router");
                             this.uuid = UUIDGenerator.generateUUID(dest_mac_address);
                             DeviceHostnameCache.instance.addDevice(dest_mac_address, uuid, true);
                             associated_mac_address = dest_mac_address;
                             associated_hostname = dest_hostname;
                         } else if (this.dest_ip_bytes.getAddress() == Main.GATEWAY_IP) {     // INternal traffic going to the router
-                            Logging.logInfoMessage("Internal traffic to router");
                             this.uuid = UUIDGenerator.generateUUID(src_mac_address);
                             DeviceHostnameCache.instance.addDevice(src_hostname, uuid, true);
                             associated_mac_address = src_mac_address;
@@ -160,7 +158,6 @@ public class PacketWrapper {
                         } else {        // Internal traffic between devices
                             this.uuid = UUIDGenerator.generateUUID(src_mac_address);
                             DeviceHostnameCache.instance.addDevice(src_hostname, uuid, true);
-                            Logging.logInfoMessage("Internal Traffic between devices");
                             associated_mac_address = src_mac_address;
                             associated_hostname = src_hostname;
                         }
@@ -170,7 +167,6 @@ public class PacketWrapper {
                         associated_mac_address = dest_mac_address;
                         associated_hostname = dest_hostname;
                         // In this case, src_ip is the external one.
-                        Logging.logInfoMessage("Checking if public..." + " " + src_ip + " " + isPublicIP(src_ip));
                         if(isPublicIP(src_ip)) {
                             this.is_locationable = true;
                             this.location_address = src_ip;
@@ -181,7 +177,6 @@ public class PacketWrapper {
                         associated_mac_address = src_mac_address;
                         associated_hostname = src_hostname;
                         // In this case, dest_ip is the external one.
-                        Logging.logInfoMessage("Checking if public with dest_ip..." + " " + dest_ip + " " + isPublicIP(dest_ip));
                         if(isPublicIP(dest_ip)) {
                             this.is_locationable = true;
                             this.location_address = dest_ip;
