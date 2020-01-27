@@ -25,7 +25,7 @@ public class PacketProcessingThread extends Thread {
     private DBConnection connection_handler;
     private DBDeviceHandler device_database_handler;
     private DeviceListManager deviceListManager;
-
+    private DeviceMonitorThread deviceMonitorThread;
     private GeoLocationCache geoLocationCache;
     private DBLocationHandler location_database_handler;
     private LocationFinder locationFinder;
@@ -48,8 +48,8 @@ public class PacketProcessingThread extends Thread {
             this.geoLocationCache = GeoLocationCache.GeoLocationCacheInstance(connection_handler);
             this.deviceListManager = new DeviceListManager(connection_handler);
             this.device_database_handler = new DBDeviceHandler(connection_handler);
-
             this.location_database_handler = new DBLocationHandler(connection_handler);
+            this.deviceMonitorThread = new DeviceMonitorThread(deviceListManager, device_database_handler);
             return true;
         } catch (DBConnectionClosedException e) {
             e.printStackTrace();

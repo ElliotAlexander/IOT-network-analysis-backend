@@ -71,6 +71,10 @@ public class DeviceListManager {
         return false;
     }
 
+    public ArrayList<DeviceWrapper> getDevices(){
+        return device_list;
+    }
+
     public DeviceWrapper getDevice(byte[] uuid) {
         return device_list.stream().filter(d -> Arrays.equals(d.getUUID(),uuid)).collect(Collectors.toCollection(ArrayList::new)).get(0);
     }

@@ -154,4 +154,21 @@ public class DBDeviceHandler {
             System.out.println(e.getNextException());
         }
     }
+
+    public void updateSumDeviceStats(long data_transferred, long data_in, long data_out){
+        String deviceStatsOverTimeInsertQuery = "INSERT INTO backend.device_data_sum_over_time(timestamp, data_transferred, data_in, data_out) VALUES(?,?,?,?)";
+        try {
+            PreparedStatement preparedStatement = c.prepareStatement(deviceStatsOverTimeInsertQuery);
+            preparedStatement.setTimestamp(1, new Timestamp(
+                    System.currentTimeMillis()
+            ));
+            preparedStatement.setLong(2, data_transferred);
+            preparedStatement.setLong(3, data_in);
+            preparedStatement.setLong(4, data_out);
+            preparedStatement.execute();
+        } catch (SQLException e){
+            new DBExceptionHandler(e, database_connection_handler);
+        }
+
+    }
 }
