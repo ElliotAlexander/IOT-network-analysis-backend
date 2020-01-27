@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.StringTokenizer;
 
@@ -18,18 +17,32 @@ public class NetworkIdentification {
 
     public static byte[] getSystemIp(){
         try {
-            InetAddress localhost = InetAddress.getLocalHost();
-            return localhost.getAddress();
-        } catch (UnknownHostException e) {
+            NetworkInterface networkInterface = NetworkInterface.getByName(Main.interface_name);
+            for(InterfaceAddress address : networkInterface.getInterfaceAddresses()) {
+                if(address.getAddress() instanceof Inet4Address){
+                    return address.getAddress().getAddress();
+                }
+            }
+        } catch (SocketException e) {
             e.printStackTrace();
             return new byte[]{};
         }
+        return new byte[]{};
+    }
+
+    public static long ipToLong(InetAddress ip) {
+        byte[] octets = ip.getAddress();
+        long result = 0;
+        for (byte octet : octets) {
+            result <<= 8;
+            result |= octet & 0xff;
+        }
+        return result;
     }
 
     public static byte[] getNetworkMask() throws InvalidInterfaceAddressException {
             try{
                 NetworkInterface networkInterface = NetworkInterface.getByName(Main.interface_name);
-                Logging.logInfoMessage("Got two netwokr addresses " + networkInterface.getInterfaceAddresses().size());
                 for(InterfaceAddress address : networkInterface.getInterfaceAddresses()){
                     if(address.getAddress() instanceof Inet4Address){
                         Logging.logInfoMessage("Found correct address " + address.getAddress());
@@ -97,14 +110,14 @@ public class NetworkIdentification {
             } else {
                 Logging.logInfoMessage("Idenfified OS as unix based.");
                 Logging.logInfoMessage("Attempting to grab gateway IP from netstat.");
-                Optional<String> gateway = output.lines().filter(s -> s.startsWith("default")).map(s -> {
+                Optional<String> gateway = output.lines().filter(s -> s.startsWith("default")).filter(s -> s.contains(Main.interface_name)).map(s -> {
                     StringTokenizer st = new StringTokenizer(s);
                     st.nextToken();
                     return st.nextToken();
                 }).findFirst();
 
                 if (gateway.isPresent()) {
-                    Logging.logInfoMessage("Parsed gateway: " + gateway);
+                    Logging.logInfoMessage("Parsed gateway: " + gateway.get());
                     InetAddress gatewayAddr = InetAddress.getByName(gateway.get());
                     return gatewayAddr.getAddress();
                 } else {
@@ -123,7 +136,7 @@ public class NetworkIdentification {
         try(DatagramSocket s=new DatagramSocket())
         {
             s.connect(InetAddress.getByAddress(new byte[]{1,1,1,1}), 0);
-            byte[] address =  NetworkInterface.getByInetAddress(s.getLocalAddress()).getHardwareAddress();
+            byte[] address =  NetworkInterface.getByName(Main.interface_name).getHardwareAddress();
             if(address == null){
                 Logging.logErrorMessage("Failed to load gateway ip (Attempt 2).");
             }
@@ -133,9 +146,11 @@ public class NetworkIdentification {
             Logging.logInfoMessage("Loaded gateway ip of " + InetAddress.getByAddress(address).toString());
             return address;
         } catch (SocketException e) {
-            e.printStackTrace();
+            Logging.logErrorMessage("Failed to load Gateway from internal routing. Attempting again.");
+            // e.printStackTrace();
         } catch (UnknownHostException e) {
-            e.printStackTrace();
+            Logging.logErrorMessage("Failed to load Gateway from internal routing. Attempting again.");
+            // e.printStackTrace();
         }
         return null;
     }
@@ -174,9 +189,11 @@ public class NetworkIdentification {
     }
 
     public static byte[] getGatewayIP() throws InvalidInterfaceAddressException {
-        byte[] res = getGatewayFromNetstat();
+        Logging.logInfoMessage("Attempting to parse gateway info from Internal Routing");
+        byte[] res = getGatewayFromInternalRouting();
         if(res == null){
-            res = getGatewayFromInternalRouting();
+            Logging.logInfoMessage("Attempting to parse gateway info from netstat.");
+            res = getGatewayFromNetstat();
             if(res == null){
                 res = getGatewayInformationFromTraceroute();
                 if(res  == null){
@@ -199,5 +216,38 @@ public class NetworkIdentification {
         }
 
         return true;
+    }
+
+    public static byte[] getMaxIpValue(byte[] ip_addr, byte[] networkMask ){
+        byte[] returnVal = new byte[ip_addr.length];
+        byte[] returnVal2 = new byte[ip_addr.length];
+
+        try {
+            for (int i = 0; i < ip_addr.length; i++)
+                returnVal[i] = new Integer(ip_addr[i] & networkMask[i]).byteValue();
+
+            for (int i = 0; i < ip_addr.length; i++)
+                returnVal2[i] = new Integer(ip_addr[i] | ~networkMask[i]).byteValue();
+        } catch (Exception e){
+            Logging.logErrorMessage("Error loading max ip subnet.");
+            e.printStackTrace();
+            return returnVal;
+        }
+        return returnVal2;
+
+    }
+
+    public static byte[] getSubnetRoot(byte[] ip_addr, byte[] networkMask ){
+        byte[] returnVal = new byte[ip_addr.length];
+        try {
+            for (int i = 0; i < ip_addr.length; i++)
+                returnVal[i] = new Integer(ip_addr[i] & networkMask[i]).byteValue();
+        } catch (Exception e){
+            Logging.logErrorMessage("Error loading max ip subnet.");
+            e.printStackTrace();
+            return returnVal;
+        }
+        return returnVal;
+
     }
 }
