@@ -198,9 +198,11 @@ public class PacketWrapper {
                         || dest_ip_bytes == InetAddress.getByAddress(Main.BROADCAST_SUBNET_ADDRESS)
                         || InetAddress.getByName("0:0:0:0:0:0:0:0").equals(dest_ip_bytes)) {
                         this.uuid = UUIDGenerator.generateUUID(src_mac_address);
+                        associated_mac_address = src_mac_address;
                         DeviceHostnameCache.instance.addDevice(src_hostname, uuid, true);
                     } else {
                         this.uuid = UUIDGenerator.generateUUID(dest_mac_address);
+                        associated_mac_address = dest_mac_address;
                         DeviceHostnameCache.instance.addDevice(dest_hostname, uuid, true);
                     }
                 } catch (NoSuchAlgorithmException e) {
