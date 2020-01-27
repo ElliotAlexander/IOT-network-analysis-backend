@@ -20,9 +20,13 @@ import java.net.*;
 
 public class LocationFinder {
 
+    /*
     protected File database = new File(
             getClass().getClassLoader().getResource("GeoLite2-City.mmdb").getFile()
 	);
+
+     */
+    protected File database = new File("tmp/GeoLite2-City.mmdb");
     protected com.maxmind.geoip2.DatabaseReader reader;
     protected InetAddress ipAddress;
 
