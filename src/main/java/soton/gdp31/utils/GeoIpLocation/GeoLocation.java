@@ -14,6 +14,9 @@ import com.maxmind.geoip2.record.Country;
 import com.maxmind.geoip2.record.City;
 import com.maxmind.geoip2.record.Location;
 
+import java.sql.Time;
+import java.sql.Timestamp;
+
 
 public class GeoLocation {
 
@@ -27,10 +30,10 @@ public class GeoLocation {
     private Double latitude;
     private Double longitude;
 
-    private Long last_scanned;
+    private Timestamp last_scanned;
     private String hostname;
 
-    public GeoLocation(CityResponse response, Long last_scanned, String hostname) {
+    public GeoLocation(CityResponse response, Timestamp last_scanned, String hostname) {
         this.response = response;
         this.country = response.getCountry();
         this.iso_code = country.getIsoCode();
@@ -44,7 +47,7 @@ public class GeoLocation {
         this.hostname = hostname;
     }
 
-    public GeoLocation(CityResponse response, Long last_scanned) {
+    public GeoLocation(CityResponse response, Timestamp last_scanned) {
         this.response = response;
         this.country = response.getCountry();
         this.iso_code = country.getIsoCode();
@@ -57,7 +60,7 @@ public class GeoLocation {
         this.last_scanned = last_scanned;
     }
 
-    public GeoLocation (Double latitude, Double longitude, Long last_scanned){
+    public GeoLocation (Double latitude, Double longitude, Timestamp last_scanned){
         this.latitude = latitude;
         this.longitude = longitude;
         this.last_scanned = last_scanned;
@@ -68,9 +71,7 @@ public class GeoLocation {
         return "GeoLocation{" +
                 ", latitude=" + latitude +
                 ", longitude=" + longitude +
-                ", last_scanned=" + last_scanned +
-                ", hostname=" + hostname +
-                '}';
+                ", last_scanned=" + last_scanned;
     }
 
     public Double getLatitude() {
@@ -85,11 +86,11 @@ public class GeoLocation {
         return city;
     }
 
-    public void setLast_scanned(Long last_scanned) {
+    public void setLast_scanned(Timestamp last_scanned) {
         this.last_scanned = last_scanned;
     }
 
-    public Long getLast_scanned(){
+    public Timestamp getLast_scanned(){
         return last_scanned;
     }
 

@@ -167,16 +167,20 @@ public class PacketWrapper {
                         associated_mac_address = dest_mac_address;
                         associated_hostname = dest_hostname;
                         // In this case, src_ip is the external one.
-                        this.is_locationable = true;
-                        this.location_address = src_ip;
+                        if(isPublicIP(src_ip)) {
+                            this.is_locationable = true;
+                            this.location_address = src_ip;
+                        }
                     } else if (src_is_internal && src_ip_bytes.getAddress() != Main.GATEWAY_IP) {
                         this.uuid = UUIDGenerator.generateUUID(src_mac_address);
                         DeviceHostnameCache.instance.addDevice(src_hostname, uuid, true);
                         associated_mac_address = src_mac_address;
                         associated_hostname = src_hostname;
                         // In this case, dest_ip is the external one.
-                        this.is_locationable = true;
-                        this.location_address = dest_ip;
+                        if(isPublicIP(dest_ip)) {
+                            this.is_locationable = true;
+                            this.location_address = dest_ip;
+                        }
                     } else {
                         Logging.logErrorMessage("Unhandled packet!");
                         Logging.logInfoMessage("Src ip:" + this.src_ip);
@@ -188,7 +192,7 @@ public class PacketWrapper {
                     if (this.uuid == null && this.is_processable) {
                         Logging.logErrorMessage("Failed to generate UUID for packet.");
                     }
-                } catch (NoSuchAlgorithmException e) {
+                } catch (NoSuchAlgorithmException | UnknownHostException e) {
                     Logging.logErrorMessage("Error initialising connections for device " + src_mac_address);
                     e.printStackTrace();
                 }
@@ -344,7 +348,9 @@ public class PacketWrapper {
     }
 
     public boolean isLocationable(){
-        return this.is_locationable && !this.is_broadcast_traffic;
+        boolean locationable = this.is_locationable && !this.is_broadcast_traffic;
+
+        return locationable;
     }
 
     public boolean isProcessable() {
@@ -352,5 +358,38 @@ public class PacketWrapper {
     }
     public boolean isIPv6(){
         return this.isIPv6;
+    }
+
+
+    public long ipToLong(String ipAddress) throws UnknownHostException{
+        byte[] octets = InetAddress.getByName(ipAddress).getAddress();
+        long result = 0;
+        for (byte octet: octets) {
+            result <<= 8;
+            result |= octet & 0xff;
+        }
+        return result;
+    }
+
+    public boolean isPublicIP(String ipAddress) throws UnknownHostException{
+        long ipToTest = ipToLong(ipAddress);
+
+        long privLow10 = ipToLong("10.0.0.0");
+        long privHigh10 = ipToLong("10.255.255.255");
+
+        boolean result10 = ipToTest >= privLow10 && ipToTest <= privHigh10;
+
+        long privLow172 = ipToLong("172.16.0.0");
+        long privHigh172 = ipToLong("172.31.255.255");
+
+        boolean result172 = ipToTest >= privLow172 && ipToTest <= privHigh172;
+
+        long privLow192 = ipToLong("192.168.0.0");
+        long privHigh192 = ipToLong("192.168.255.255");
+
+        boolean result192 = ipToTest >= privLow192 && ipToTest <= privHigh192;
+
+        return !(result10 && result172 && result192);
+
     }
 }

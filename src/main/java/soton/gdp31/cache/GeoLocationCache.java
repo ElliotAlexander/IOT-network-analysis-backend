@@ -6,10 +6,8 @@ import soton.gdp31.database.DBExceptionHandler;
 import soton.gdp31.logger.Logging;
 import soton.gdp31.utils.GeoIpLocation.GeoLocation;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.ResultSet;
+import java.lang.reflect.InvocationTargetException;
+import java.sql.*;
 import java.util.*;
 import java.security.NoSuchAlgorithmException;
 
@@ -26,7 +24,7 @@ public class GeoLocationCache {
     HashMap<byte[], HashMap<String, GeoLocation>> address_location_cache;
 
     // Cache timeout in milliseconds.
-    public static final int CACHE_TIMEOUT = 15000;
+    public static final int CACHE_TIMEOUT = 20000;
 
     // Cache pushes every 10 seconds.
     public static final int DATABASE_UPDATE_TIMER = 10000;
@@ -87,15 +85,23 @@ public class GeoLocationCache {
                 } else {
                     Double latitude = rs.getDouble("latitude");
                     Double longitude = rs.getDouble("longitude");
-                    Long last_scanned = rs.getLong("last_scanned");
+                    Timestamp last_scanned = rs.getTimestamp("last_scanned");
 
                     GeoLocation from_database = new GeoLocation(latitude, longitude, last_scanned);
 
                     // Place this into the cache.
-                    HashMap<String, GeoLocation> uuids_list = address_location_cache.get(given_uuid);
-                    uuids_list.put(given_ip_address, from_database);
+                    if(address_location_cache.containsKey(given_uuid)) {
+                        HashMap<String, GeoLocation> uuids_list = address_location_cache.get(given_uuid);
+                        Logging.logInfoMessage("GIVEN IP: " + given_ip_address + " | DB IP: " + from_database.toString());
 
-                    database_has_ip =  true;
+                        uuids_list.put(given_ip_address, from_database);
+
+                        database_has_ip = true;
+                    } else {
+                        HashMap<String, GeoLocation> uuids_list = new HashMap<>();
+                        uuids_list.put(given_ip_address, from_database);
+                        database_has_ip = true;
+                    }
                 }
             } catch (SQLException e) {
                 new DBExceptionHandler(e, database_connection_handler);
@@ -172,14 +178,31 @@ public class GeoLocationCache {
                 byte[] uuid = first.getKey();
                 HashMap<String, GeoLocation> address_and_location = first.getValue();
 
+                String query =
+                        "INSERT INTO backend.ip_address_location" +
+                                "(uuid, ip_address, latitude, longitude, last_scanned) " +
+                                "VALUES (?,?,?,?,?) " +
+                                "ON CONFLICT DO NOTHING; ";
+
+                PreparedStatement ps = null;
+                try {
+                    ps = database_connection_handler.getConnection().prepareStatement(query);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    return false;
+                } catch (DBConnectionClosedException e) {
+                    e.printStackTrace();
+                    return false;
+                }
                 for(Map.Entry<String, GeoLocation> second : address_and_location.entrySet()){
                     String ip_address = second.getKey();
                     GeoLocation location = second.getValue();
 
                     Double latitude = location.getLatitude();
                     Double longitude = location.getLongitude();
-                    Long last_scanned = location.getLast_scanned();
+                    Timestamp last_scanned = location.getLast_scanned();
 
+                    /*
                     String query =
                             "BEGIN " +
                                 "IF NOT EXISTS (SELECT * FROM ip_address_location " +
@@ -189,29 +212,40 @@ public class GeoLocationCache {
                                     "INSERT INTO ip_address_location (uuid, ip_address, latitude, longitude, last_scanned) " +
                                     "VALUES (?,?,?,?,?) " +
                                 "END "+
+                                    "END IF " +
                             "END ";
+
+                     */
+
+
                     try {
-                        PreparedStatement ps = database_connection_handler.getConnection().prepareStatement(query);
 
                         ps.setBytes(1, uuid);
                         ps.setString(2, ip_address);
-                        ps.setBytes(3, uuid);
-                        ps.setString(4, ip_address);
-                        ps.setDouble(5, latitude);
-                        ps.setDouble(6, longitude);
-                        ps.setLong(7, last_scanned);
+                        ps.setDouble(3, latitude);
+                        ps.setDouble(4, longitude);
+                        ps.setTimestamp(5, last_scanned);
 
-                        ResultSet rs = ps.executeQuery();
+                        ps.addBatch();
 
-                    } catch (DBConnectionClosedException e) {
-                        new DBExceptionHandler(e, database_connection_handler);
-                        return false;
                     } catch (SQLException e) {
                         new DBExceptionHandler(e, database_connection_handler);
                         return false;
                     }
                 }
+
+                try {
+                    ps.executeBatch();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+
+                    Logging.logErrorMessage("BATCH ERROR");
+                    e.getNextException().printStackTrace();
+                    return false;
+                }
             }
+
+
             this.last_pushed = System.currentTimeMillis();
             return true;
         }
@@ -219,6 +253,15 @@ public class GeoLocationCache {
         return false;
     }
 
+    public static String extractSqlState(SQLException sqlException) {
+        String sqlState = sqlException.getSQLState();
+        SQLException nested = sqlException.getNextException();
+        while ( sqlState == null && nested != null ) {
+            sqlState = nested.getSQLState();
+            nested = nested.getNextException();
+        }
+        return sqlState;
+    }
 
 
     // TODO: Create pruning cache thread. Checks if device is still on last_seen deviceUUIDcache, if no, then kick off GeoLocationCache.
@@ -230,7 +273,7 @@ public class GeoLocationCache {
             HashMap<String, soton.gdp31.utils.GeoIpLocation.GeoLocation> list_of_locations = address_location_cache.get(uuid);// returns <IP Address, Location Object> hashmap
 
             if(list_of_locations.containsKey(ip_address)){
-                if(list_of_locations.get(ip_address).getLast_scanned() < (System.currentTimeMillis() - CACHE_TIMEOUT)){
+                if(list_of_locations.get(ip_address).getLast_scanned().getTime() < (System.currentTimeMillis() - CACHE_TIMEOUT)){
                     list_of_locations.remove(ip_address);
                 }
                 return true;
@@ -267,8 +310,8 @@ public class GeoLocationCache {
                 if(list_of_locations.containsKey(ip_address)){
                     // Device has seen this IP address before.
                     soton.gdp31.utils.GeoIpLocation.GeoLocation location_object = list_of_locations.get(ip_address); // GeoLocation of ip_address in Cache.
-                    Long last_scanned = location_object.getLast_scanned(); // Last time GeoLocation was scanned.
-                    if(last_scanned < (System.currentTimeMillis() - CACHE_TIMEOUT)){
+                    Timestamp last_scanned = location_object.getLast_scanned(); // Last time GeoLocation was scanned.
+                    if(last_scanned.getTime() < (System.currentTimeMillis() - CACHE_TIMEOUT)){
                         // TODO: Remove location if it was scanned ages ago?
                     }
                     // Replace old cache of ip address with new one.
