@@ -17,6 +17,8 @@ import com.maxmind.geoip2.record.*;
 import java.io.*;
 import java.io.IOException;
 import java.net.*;
+import java.sql.Timestamp;
+import java.time.ZonedDateTime;
 
 public class LocationFinder {
 
@@ -57,7 +59,9 @@ public class LocationFinder {
             Double longitude = location.getLongitude();
 
 
-            Long last_scanned = System.currentTimeMillis();
+            Timestamp last_scanned = new Timestamp(
+                    ZonedDateTime.now().toInstant().toEpochMilli()
+            );
             // Build returnable.
             GeoLocation returnable = new GeoLocation(response, last_scanned);
 
@@ -101,7 +105,9 @@ public class LocationFinder {
             Double longitude = location.getLongitude();
 
 
-            Long last_scanned = System.currentTimeMillis();
+            Timestamp last_scanned = new Timestamp(
+                    ZonedDateTime.now().toInstant().toEpochMilli()
+            );
             // Build returnable.
             GeoLocation returnable = new GeoLocation(response, last_scanned);
             Logging.logInfoMessage("GeoLocated an address at: " + ip_address.getHostName());
