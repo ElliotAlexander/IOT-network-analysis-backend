@@ -32,23 +32,24 @@ public class DBDeviceHandler {
         if(!DeviceUUIDCache.DeviceObjectCacheInstance(database_connection_handler).checkDeviceExists(p.getUUID())) {
             try {
                 String insert_query = "INSERT INTO backend.devices(" +
-                        "uuid,mac_addr,device_hostname,device_nickname,internal_ip_v4,currently_active,last_seen,first_seen," +
-                        "set_ignored)" + " VALUES(?,?,?,?,?,?,?,?,?);";
+                        "uuid,mac_addr,device_hostname,device_nickname,internal_ip_v4,internal_ip_v6,currently_active,last_seen,first_seen," +
+                        "set_ignored)" + " VALUES(?,?,?,?,?,?,?,?,?,?);";
                 PreparedStatement preparedStatement = c.prepareStatement(insert_query);
                 preparedStatement.setBytes(1, p.getUUID());
                 preparedStatement.setString(2, p.getAssociatedMacAddress());
                 preparedStatement.setString(3, p.getAssociatedHostname());
                 preparedStatement.setString(4, "not set");
-                preparedStatement.setString(5, p.getSrcIp());
-                preparedStatement.setBoolean(6, true);
-                preparedStatement.setTimestamp(7, new Timestamp(
-                        ZonedDateTime.now().toInstant().toEpochMilli()
-                ));
-
+                preparedStatement.setString(5, (p.isIPv6() ? "not set" : p.getSrcIp()));
+                preparedStatement.setString(6, (p.isIPv6() ? p.getSrcIp() : "not set"));
+                preparedStatement.setBoolean(7, true);
                 preparedStatement.setTimestamp(8, new Timestamp(
                         ZonedDateTime.now().toInstant().toEpochMilli()
                 ));
-                preparedStatement.setBoolean(9, false);
+
+                preparedStatement.setTimestamp(9, new Timestamp(
+                        ZonedDateTime.now().toInstant().toEpochMilli()
+                ));
+                preparedStatement.setBoolean(10, false);
                 preparedStatement.execute();
 
                 String device_insert_query = "INSERT INTO backend.device_stats(uuid, packet_count, https_packet_count, data_in, data_out, data_transferred)" + "VALUES(?,?,?,?,?,?);";
@@ -152,5 +153,22 @@ public class DBDeviceHandler {
             e.printStackTrace();
             System.out.println(e.getNextException());
         }
+    }
+
+    public void updateSumDeviceStats(long data_transferred, long data_in, long data_out){
+        String deviceStatsOverTimeInsertQuery = "INSERT INTO backend.device_data_sum_over_time(timestamp, data_transferred, data_in, data_out) VALUES(?,?,?,?)";
+        try {
+            PreparedStatement preparedStatement = c.prepareStatement(deviceStatsOverTimeInsertQuery);
+            preparedStatement.setTimestamp(1, new Timestamp(
+                    System.currentTimeMillis()
+            ));
+            preparedStatement.setLong(2, data_transferred);
+            preparedStatement.setLong(3, data_in);
+            preparedStatement.setLong(4, data_out);
+            preparedStatement.execute();
+        } catch (SQLException e){
+            new DBExceptionHandler(e, database_connection_handler);
+        }
+
     }
 }

@@ -2,13 +2,17 @@ package soton.gdp31.threads;
 
 import soton.gdp31.database.DBConnection;
 import soton.gdp31.database.DBDeviceHandler;
+import soton.gdp31.database.DBLocationHandler;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.logger.Logging;
 import soton.gdp31.manager.DeviceListManager;
+import soton.gdp31.utils.GeoIpLocation.LocationFinder;
 import soton.gdp31.utils.NetworkUtils.HostnameFetcher;
 import soton.gdp31.utils.PacketProcessingQueue;
 import soton.gdp31.wrappers.DeviceWrapper;
 import soton.gdp31.wrappers.PacketWrapper;
+import soton.gdp31.cache.GeoLocationCache;
+import soton.gdp31.utils.GeoIpLocation.GeoLocation;
 
 /**
  * @Author Elliot Alexander
@@ -21,6 +25,10 @@ public class PacketProcessingThread extends Thread {
     private DBConnection connection_handler;
     private DBDeviceHandler device_database_handler;
     private DeviceListManager deviceListManager;
+    private DeviceMonitorThread deviceMonitorThread;
+    private GeoLocationCache geoLocationCache;
+    private DBLocationHandler location_database_handler;
+    private LocationFinder locationFinder;
 
     public PacketProcessingThread() {
         while(openConnections() == false){
@@ -35,9 +43,13 @@ public class PacketProcessingThread extends Thread {
 
     public boolean openConnections(){
         try {
+            this.locationFinder = new LocationFinder();
             this.connection_handler = new DBConnection();
+            this.geoLocationCache = GeoLocationCache.GeoLocationCacheInstance(connection_handler);
             this.deviceListManager = new DeviceListManager(connection_handler);
             this.device_database_handler = new DBDeviceHandler(connection_handler);
+            this.location_database_handler = new DBLocationHandler(connection_handler);
+            this.deviceMonitorThread = new DeviceMonitorThread(deviceListManager, device_database_handler);
             return true;
         } catch (DBConnectionClosedException e) {
             e.printStackTrace();
@@ -51,7 +63,7 @@ public class PacketProcessingThread extends Thread {
 
             PacketWrapper p = PacketProcessingQueue.instance.packetQueue.poll();
 
-            if(p == null){
+            if(p == null || !p.isProcessable()){
                 try {
                     Thread.sleep(50);
                     continue;
@@ -80,9 +92,38 @@ public class PacketProcessingThread extends Thread {
                     deviceWrapper.setDataOut(deviceWrapper.getDataOut() + p.getPacketSize());
                 }
 
+                // Location provider.
+                if(p.isLocationable()){
+                    // Set device UUID.
+                    byte[] device_uuid = p.getUUID();
+
+                    // Get external destination/source address.
+                    String location_address = p.getLocation_address();
+
+                    // Has this address been located before, within a list.
+                    Boolean address_has_located = geoLocationCache.needsLocating(device_uuid, location_address);
+
+                    if(address_has_located){
+                        // Look up the address.
+                        GeoLocation location = locationFinder.lookup(location_address);
+                        // Store the location in the cache.
+                        if(location != null) {
+                            Logging.logInfoMessage("Storing location.....   LAT: " + location.getLatitude().toString() + " | LONG: " + location.getLongitude().toString());
+                            geoLocationCache.storeLocation(device_uuid, location_address, location);
+                        } else {
+                            Logging.logWarnMessage("Failed to locate error for " + location_address);
+                        }
+                    } else { // Device has contacted it before in the Cache.
+                            // Do nothing.
+                    }
+
+                }
+
 
                 if (p.getIsDNSPacket())
-                    p.getDNSQueries().stream().forEach(query -> deviceWrapper.addDNSQuery(query));
+                    p.getDNSQueries().stream().forEach(query -> {
+                        deviceWrapper.addDNSQuery(query);
+                    });
 
 
                 // Every ten seconds - update the database.
@@ -91,6 +132,7 @@ public class PacketProcessingThread extends Thread {
                     device_database_handler.updateLastSeen(deviceWrapper);
                     device_database_handler.updatePacketCounts(deviceWrapper, System.currentTimeMillis());
                     device_database_handler.updateDNSQueries(deviceWrapper);
+                    geoLocationCache.pushCacheToDatabase();
                 }
             } else {
                 // If we haven't seen a device before.

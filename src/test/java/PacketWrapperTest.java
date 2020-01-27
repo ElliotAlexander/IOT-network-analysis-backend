@@ -8,6 +8,9 @@ import org.pcap4j.core.PcapNativeException;
 import org.pcap4j.core.Pcaps;
 import org.pcap4j.packet.EthernetPacket;
 import soton.gdp31.exceptions.InvalidIPPacketException;
+import soton.gdp31.exceptions.devices.IPv6DeviceException;
+import soton.gdp31.exceptions.network.UnhandledTrafficException;
+import soton.gdp31.logger.Logging;
 import soton.gdp31.wrappers.PacketWrapper;
 
 public class PacketWrapperTest {
@@ -25,6 +28,10 @@ public class PacketWrapperTest {
             e.printStackTrace();
         } catch (InvalidIPPacketException e) {
             e.printStackTrace();
+        } catch (UnhandledTrafficException e) {
+
+        } catch (IPv6DeviceException e) {
+            Logging.logInfoMessage("Skipping IPv6 Device.");
         }
     }
 

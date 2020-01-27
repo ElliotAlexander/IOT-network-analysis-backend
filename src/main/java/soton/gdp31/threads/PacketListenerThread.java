@@ -6,6 +6,8 @@ import org.pcap4j.packet.*;
 import soton.gdp31.Main;
 import soton.gdp31.exceptions.InterfaceUnknownException;
 import soton.gdp31.exceptions.InvalidIPPacketException;
+import soton.gdp31.exceptions.devices.IPv6DeviceException;
+import soton.gdp31.exceptions.network.UnhandledTrafficException;
 import soton.gdp31.logger.Logging;
 import soton.gdp31.utils.NetworkUtils.InterfaceUtils;
 import soton.gdp31.utils.PacketProcessingQueue;
@@ -38,6 +40,7 @@ public class PacketListenerThread extends Thread {
 
     @Override
     public void run() {
+        Logging.logInfoMessage("Started packet listener thread.");
         while (handle.isOpen()) {
             EthernetPacket ethernet_packet = null;
             try {
@@ -60,6 +63,10 @@ public class PacketListenerThread extends Thread {
             } catch (ClassCastException e){
                 e.printStackTrace();
                 Logging.logErrorMessage("Skipping non-ethernet packet");
+            } catch (UnhandledTrafficException e) {
+                continue;
+            } catch (IPv6DeviceException e) {
+                Logging.logInfoMessage("Skipping IPv6 device.");
             }
         }
     }

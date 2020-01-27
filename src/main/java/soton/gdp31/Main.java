@@ -2,6 +2,7 @@ package soton.gdp31;
 
 
 import soton.gdp31.config.ConfigLoader;
+import soton.gdp31.exceptions.network.InvalidInterfaceAddressException;
 import soton.gdp31.logger.Logging;
 import soton.gdp31.threads.PacketListenerThread;
 import soton.gdp31.threads.PacketProcessingThread;
@@ -10,13 +11,10 @@ import soton.gdp31.utils.NetworkUtils.NetworkIdentification;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
+import java.util.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.UnknownHostException;
-import java.util.Properties;
 
 public class Main {
 
@@ -25,6 +23,7 @@ public class Main {
     public static byte[] SYSTEM_IP;
     public static byte[] GATEWAY_IP;
     public static byte[] SUBNET_MASK;
+    public static byte[] BROADCAST_SUBNET_ADDRESS;
 
     // This is a list of the configuration options we'll declare below, and load from the config file.
     private static final String configOptions[] = {
@@ -32,7 +31,10 @@ public class Main {
             "pcap_dump_file",
             "pcap_dump_enabled",
             "logfile_output",
-            "logfile_enabled"
+            "logfile_enabled",
+            "hardcode_system_ip",
+            "hardcode_subnet_mask",
+            "hardcode_gateway_ip",
     };
 
     // Loadable configuration options.
@@ -41,6 +43,10 @@ public class Main {
     public static boolean pcap_dump_enabled;
     public static String logfile_output;
     public static boolean logfile_enabled;
+
+    public static String hardcode_system_ip;
+    public static String hardcode_subnet_mask;
+    public static String hardcode_gateway_ip;
 
     public static final int PPT_THREAD_COUNT = 1;
 
@@ -56,19 +62,25 @@ public class Main {
         printInterfaces();
 
         // Setup basic network information.
-        this.SYSTEM_IP = NetworkIdentification.getSystemIp();
-        this.SUBNET_MASK = NetworkIdentification.getNetworkMask();
-        this.GATEWAY_IP = NetworkIdentification.getGatewayIP();
+
         try {
+            this.SYSTEM_IP = hardcode_system_ip == null ? NetworkIdentification.getSystemIp() : InetAddress.getByName(hardcode_system_ip).getAddress();
+            this.SUBNET_MASK = hardcode_subnet_mask == null ? NetworkIdentification.getNetworkMask() :  InetAddress.getByName(hardcode_subnet_mask).getAddress();
+            this.GATEWAY_IP = hardcode_gateway_ip == null ? NetworkIdentification.getGatewayIP() :  InetAddress.getByName(hardcode_gateway_ip).getAddress();
+            this.BROADCAST_SUBNET_ADDRESS = NetworkIdentification.getMaxIpValue(this.GATEWAY_IP, this.SUBNET_MASK);
             Logging.logInfoMessage("Gateway IP address: " + InetAddress.getByAddress(this.GATEWAY_IP));
             Logging.logInfoMessage("Network Mask: " + InetAddress.getByAddress(this.SUBNET_MASK));
             Logging.logInfoMessage("System IP: " + InetAddress.getByAddress(this.SYSTEM_IP));
+            Logging.logInfoMessage("Broadcast Subnet Address: " + InetAddress.getByAddress(this.BROADCAST_SUBNET_ADDRESS));
         } catch (UnknownHostException e) {
             Logging.logErrorMessage("Error fetching network information.");
             e.printStackTrace();
+        } catch (InvalidInterfaceAddressException e) {
+            Logging.logErrorMessage("Failed to parse network mask.");
+            e.printStackTrace();
         }
 
-
+        // Instantiate
 
         // Start our listening thread.
         Logging.logInfoMessage("Starting packet listner thread");

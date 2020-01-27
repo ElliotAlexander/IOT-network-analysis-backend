@@ -52,9 +52,9 @@ public class DeviceListManager {
                 DeviceWrapper dw = new DeviceWrapper(rs.getBytes(1));
                 dw.setPacketCount(rs.getInt(2));
                 dw.setHttpsPacketCount(rs.getInt(3));
-                dw.setDataTransferred(rs.getLong(3));
-                dw.setDataIn(rs.getLong(4));
-                dw.setDataOut(rs.getLong(5));
+                dw.setDataTransferred(rs.getLong(4));
+                dw.setDataIn(rs.getLong(5));
+                dw.setDataOut(rs.getLong(6));
                 device_list.add(dw);
             }
         } catch (SQLException | DBConnectionClosedException e) {
@@ -69,6 +69,10 @@ public class DeviceListManager {
             }
         }
         return false;
+    }
+
+    public ArrayList<DeviceWrapper> getDevices(){
+        return device_list;
     }
 
     public DeviceWrapper getDevice(byte[] uuid) {
