@@ -59,9 +59,6 @@ public class PacketWrapper {
 
     private boolean is_locationable = false;
     private String location_address;
-
-    private boolean is_packet_interesting = false;
-
     public PacketWrapper(EthernetPacket p, long timestamp, long packet_count) throws InvalidIPPacketException, UnhandledTrafficException, IPv6DeviceException {
 
         this.timestamp = timestamp;
@@ -213,6 +210,7 @@ public class PacketWrapper {
                 }
             } else {
                 Logging.logInfoMessage("Ignoring standard ipv6 traffic.");
+                this.is_processable = false;
             }
         }
 
@@ -243,7 +241,7 @@ public class PacketWrapper {
 
         if (srcPort == 80 || srcPort == 8080 || destPort == 80 || destPort == 8080 ){
             this.isHTTPS = true;
-        }else if(srcPort == 443 || destPort == 443 ){
+        } else if(srcPort == 443 || destPort == 443 ){
             this.isHTTPS = false;
         }
 

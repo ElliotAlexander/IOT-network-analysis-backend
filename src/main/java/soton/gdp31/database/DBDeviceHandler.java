@@ -46,10 +46,10 @@ public class DBDeviceHandler {
                         ZonedDateTime.now().toInstant().toEpochMilli()
                 ));
 
-                preparedStatement.setTimestamp(8, new Timestamp(
+                preparedStatement.setTimestamp(9, new Timestamp(
                         ZonedDateTime.now().toInstant().toEpochMilli()
                 ));
-                preparedStatement.setBoolean(9, false);
+                preparedStatement.setBoolean(10, false);
                 preparedStatement.execute();
 
                 String device_insert_query = "INSERT INTO backend.device_stats(uuid, packet_count, https_packet_count, data_in, data_out, data_transferred)" + "VALUES(?,?,?,?,?,?);";
