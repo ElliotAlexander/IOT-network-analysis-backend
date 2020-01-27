@@ -1,6 +1,7 @@
 
 package soton.gdp31.database;
 
+import main.java.soton.gdp31.utils.DeviceVendor.VendorChecker;
 import org.pcap4j.packet.DnsQuestion;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.cache.DeviceUUIDCache;
@@ -20,20 +21,22 @@ import java.util.List;
  */
 public class DBDeviceHandler {
 
-    private final DBConnection database_connection_handler;
+    private final soton.gdp31.database.DBConnection database_connection_handler;
     private Connection c;
+    private VendorChecker vendorChecker;
 
-    public DBDeviceHandler(DBConnection database_connection_handler) throws DBConnectionClosedException {
+    public DBDeviceHandler(soton.gdp31.database.DBConnection database_connection_handler) throws DBConnectionClosedException {
         this.database_connection_handler = database_connection_handler;
         this.c = database_connection_handler.getConnection();
+        this.vendorChecker = new VendorChecker();
     }
 
     public void addToDatabase(PacketWrapper p){
         if(!DeviceUUIDCache.DeviceObjectCacheInstance(database_connection_handler).checkDeviceExists(p.getUUID())) {
             try {
                 String insert_query = "INSERT INTO backend.devices(" +
-                        "uuid,mac_addr,device_hostname,device_nickname,internal_ip_v4,internal_ip_v6,currently_active,last_seen,first_seen," +
-                        "set_ignored)" + " VALUES(?,?,?,?,?,?,?,?,?,?);";
+                        "uuid,mac_addr,device_hostname,device_nickname,internal_ip_v4,internal_ip_v6,currently_active,last_seen,first_seen,device_type," +
+                        "set_ignored)" + " VALUES(?,?,?,?,?,?,?,?,?,?,?);";
                 PreparedStatement preparedStatement = c.prepareStatement(insert_query);
                 preparedStatement.setBytes(1, p.getUUID());
                 preparedStatement.setString(2, p.getAssociatedMacAddress());
@@ -49,7 +52,8 @@ public class DBDeviceHandler {
                 preparedStatement.setTimestamp(9, new Timestamp(
                         ZonedDateTime.now().toInstant().toEpochMilli()
                 ));
-                preparedStatement.setBoolean(10, false);
+                preparedStatement.setBoolean(11, false);
+                preparedStatement.setString(10, vendorChecker.checkMac(p.getAssociatedMacAddress()));
                 preparedStatement.execute();
 
                 String device_insert_query = "INSERT INTO backend.device_stats(uuid, packet_count, https_packet_count, data_in, data_out, data_transferred)" + "VALUES(?,?,?,?,?,?);";
@@ -62,7 +66,7 @@ public class DBDeviceHandler {
                 device_stats_prepared_statement.setInt(6, p.getPacketSize());
                 device_stats_prepared_statement.execute();
             } catch (SQLException e) {
-                new DBExceptionHandler(e, database_connection_handler);
+                new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
             }
         }
     }
@@ -77,7 +81,7 @@ public class DBDeviceHandler {
             preparedStatement.setBytes(2, device.getUUID());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            new DBExceptionHandler(e, database_connection_handler);
+            new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
         }
     }
 
@@ -108,7 +112,7 @@ public class DBDeviceHandler {
             preparedStatement.execute();
 
         } catch (SQLException e){
-            new DBExceptionHandler(e, database_connection_handler);
+            new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
         }
 
         // Device stats - general count.
@@ -123,7 +127,7 @@ public class DBDeviceHandler {
             preparedStatement.setBytes(6, device_wrapper.getUUID());
             preparedStatement.executeUpdate();
         } catch (SQLException e){
-            new DBExceptionHandler(e, database_connection_handler);
+            new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
         }
     }
 
