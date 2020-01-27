@@ -4,7 +4,6 @@ import soton.gdp31.database.DBConnection;
 import soton.gdp31.database.DBDeviceHandler;
 import soton.gdp31.database.DBLocationHandler;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
-import soton.gdp31.logger.Logging;
 import soton.gdp31.manager.DeviceListManager;
 import soton.gdp31.utils.GeoIpLocation.LocationFinder;
 import soton.gdp31.utils.NetworkUtils.HostnameFetcher;
@@ -13,7 +12,6 @@ import soton.gdp31.wrappers.DeviceWrapper;
 import soton.gdp31.wrappers.PacketWrapper;
 import soton.gdp31.cache.GeoLocationCache;
 import soton.gdp31.utils.GeoIpLocation.GeoLocation;
-import soton.gdp31.utils.GeoIpLocation.LocationFinder;
 
 /**
  * @Author Elliot Alexander
@@ -64,7 +62,7 @@ public class PacketProcessingThread extends Thread {
 
             PacketWrapper p = PacketProcessingQueue.instance.packetQueue.poll();
 
-            if(p == null){
+            if(p == null || !p.isProcessable()){
                 try {
                     Thread.sleep(50);
                     continue;

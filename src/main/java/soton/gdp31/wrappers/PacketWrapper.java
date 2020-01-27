@@ -22,6 +22,8 @@ import java.util.List;
 
 public class PacketWrapper {
 
+    private boolean is_processable = true;
+
     private boolean isIpPacket;
     private boolean isIPv6 = false;
     private int srcPort, destPort;
@@ -96,8 +98,12 @@ public class PacketWrapper {
         if(this.isIPv6){
             try {
                 if(NetworkIdentification.ipToLong(dest_ip_bytes) >= NetworkIdentification.ipToLong(InetAddress.getByName("fe80::"))
-                || NetworkIdentification.ipToLong(dest_ip_bytes) <= NetworkIdentification.ipToLong(InetAddress.getByName("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"))) {
-                    Logging.logInfoMessage("Identified ipv6 broadcast traffic");
+                || NetworkIdentification.ipToLong(dest_ip_bytes) <= NetworkIdentification.ipToLong(InetAddress.getByName("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"))
+                || NetworkIdentification.ipToLong(src_ip_bytes) >= NetworkIdentification.ipToLong(InetAddress.getByName("fe80::"))
+                || NetworkIdentification.ipToLong(src_ip_bytes) <= NetworkIdentification.ipToLong(InetAddress.getByName("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"))
+                || this.src_ip_bytes == InetAddress.getByName("0:0:0:0:0:0:0:0")
+                || this.dest_ip_bytes == InetAddress.getByName("0:0:0:0:0:0:0:0")) {
+                    this.is_broadcast_traffic = true;
                 }
             } catch (UnknownHostException e) {
                 e.printStackTrace();
@@ -108,8 +114,8 @@ public class PacketWrapper {
                         || NetworkIdentification.ipToLong(src_ip_bytes) >= NetworkIdentification.ipToLong(InetAddress.getByName("239.0.0.0"))
                         || dest_ip_bytes == InetAddress.getByAddress(Main.BROADCAST_SUBNET_ADDRESS)
                         || src_ip_bytes == InetAddress.getByAddress(Main.BROADCAST_SUBNET_ADDRESS)
-                        || this.dest_ip == "0.0.0.0"
-                        || this.src_ip == "0.0.0.0"){
+                        || InetAddress.getByName("0.0.0.0").equals(src_ip_bytes)
+                        || InetAddress.getByName("0.0.0.0").equals(dest_ip_bytes)){
                     this.is_broadcast_traffic = true;
                 }
             } catch (UnknownHostException e) {
@@ -118,77 +124,95 @@ public class PacketWrapper {
         }
 
 
-        if(this.is_broadcast_traffic) {
-            try {
-                if (this.src_ip != "0.0.0.0" && this.src_ip != "0:0:0:0:0:0:0:0") {
-                    this.uuid = UUIDGenerator.generateUUID(src_mac_address);
-                    associated_mac_address = src_mac_address;
-                    associated_hostname = src_hostname;
-                } else {
-                    Logging.logWarnMessage("Skipping unidentified broadcast traffic.");
+        if(!this.isIPv6) {
+            if (this.is_broadcast_traffic) {
+                try {
+                    if (this.src_ip != "0.0.0.0" && this.src_ip != "0:0:0:0:0:0:0:0") {
+                        this.uuid = UUIDGenerator.generateUUID(src_mac_address);
+                        associated_mac_address = src_mac_address;
+                        associated_hostname = src_hostname;
+                    } else {
+                        Logging.logWarnMessage("Skipping unidentified broadcast traffic.");
+                    }
+                } catch (NoSuchAlgorithmException e) {
+                    Logging.logErrorMessage("Error initialising connections for device " + src_mac_address);
+                    e.printStackTrace();
                 }
-            } catch (NoSuchAlgorithmException e) {
-                Logging.logErrorMessage("Error initialising connections for device " + src_mac_address);
-                e.printStackTrace();
-            }
-        } else {
-            boolean src_is_internal = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getSrcAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
-            boolean dest_is_internal = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getDstAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
-            this.is_internal_traffic = (dest_is_internal && src_is_internal);
-            try {
-                if ( is_internal_traffic) {      // Is the traffic purely internal? Or is just the source internal
-                    if(this.src_ip_bytes.getAddress() == Main.GATEWAY_IP) {         // Internal traffic coming from the router
+            } else {
+                boolean src_is_internal = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getSrcAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
+                boolean dest_is_internal = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getDstAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
+                this.is_internal_traffic = (dest_is_internal && src_is_internal);
+                try {
+                    if (is_internal_traffic) {      // Is the traffic purely internal? Or is just the source internal
+                        if (this.src_ip_bytes.getAddress() == Main.GATEWAY_IP) {         // Internal traffic coming from the router
+                            this.uuid = UUIDGenerator.generateUUID(dest_mac_address);
+                            DeviceHostnameCache.instance.addDevice(dest_mac_address, uuid, true);
+                            associated_mac_address = dest_mac_address;
+                            associated_hostname = dest_hostname;
+                        } else if (this.dest_ip_bytes.getAddress() == Main.GATEWAY_IP) {     // INternal traffic going to the router
+                            this.uuid = UUIDGenerator.generateUUID(src_mac_address);
+                            DeviceHostnameCache.instance.addDevice(src_hostname, uuid, true);
+                            associated_mac_address = src_mac_address;
+                            associated_hostname = src_hostname;
+                        } else {        // Internal traffic between devices
+                            this.uuid = UUIDGenerator.generateUUID(src_mac_address);
+                            DeviceHostnameCache.instance.addDevice(src_hostname, uuid, true);
+                            associated_mac_address = src_mac_address;
+                            associated_hostname = src_hostname;
+                        }
+                    } else if (dest_is_internal && dest_ip_bytes.getAddress() != Main.GATEWAY_IP) {        // Destination is internal, source is external
                         this.uuid = UUIDGenerator.generateUUID(dest_mac_address);
-                        DeviceHostnameCache.instance.addDevice(dest_mac_address, uuid, true);
+                        DeviceHostnameCache.instance.addDevice(dest_hostname, uuid, false);
                         associated_mac_address = dest_mac_address;
                         associated_hostname = dest_hostname;
-                    } else if(this.dest_ip_bytes.getAddress() == Main.GATEWAY_IP) {     // INternal traffic going to the router
-                        this.uuid = UUIDGenerator.generateUUID(src_mac_address);
-                        DeviceHostnameCache.instance.addDevice(src_hostname, uuid, true);
-                        associated_mac_address = src_mac_address;
-                        associated_hostname = src_hostname;
-                    } else {        // Internal traffic between devices
-                        this.uuid = UUIDGenerator.generateUUID(src_mac_address);
-                        DeviceHostnameCache.instance.addDevice(src_hostname, uuid, true);
-                        associated_mac_address = src_mac_address;
-                        associated_hostname = src_hostname;
-                    }
-                } else if(dest_is_internal && dest_ip_bytes.getAddress() != Main.GATEWAY_IP) {        // Destination is internal, source is external
-                    this.uuid = UUIDGenerator.generateUUID(dest_mac_address);
-                    DeviceHostnameCache.instance.addDevice(dest_hostname, uuid, false);
-                    associated_mac_address = dest_mac_address;
-                    associated_hostname = dest_hostname;
                         // In this case, src_ip is the external one.
-                    this.is_locationable = true;
-                    this.location_address = src_ip;
-                } else if(src_is_internal && src_ip_bytes.getAddress() != Main.GATEWAY_IP){
-                    this.uuid = UUIDGenerator.generateUUID(src_mac_address);
-                    DeviceHostnameCache.instance.addDevice(src_hostname, uuid, true);
-                    associated_mac_address = src_mac_address;
-                    associated_hostname = src_hostname;
-                    // In this case, dest_ip is the external one.
-                    this.is_locationable = true;
-                    this.location_address = dest_ip;
-                } else {
-                    if(this.isIPv6){
-                        Logging.logInfoMessage("Unable to identify IPv6 traffic.");
-                        throw new UnhandledTrafficException("Unable to identify IPv6 traffic.");
+                        this.is_locationable = true;
+                        this.location_address = src_ip;
+                    } else if (src_is_internal && src_ip_bytes.getAddress() != Main.GATEWAY_IP) {
+                        this.uuid = UUIDGenerator.generateUUID(src_mac_address);
+                        DeviceHostnameCache.instance.addDevice(src_hostname, uuid, true);
+                        associated_mac_address = src_mac_address;
+                        associated_hostname = src_hostname;
+                        // In this case, dest_ip is the external one.
+                        this.is_locationable = true;
+                        this.location_address = dest_ip;
                     } else {
-                        Logging.logErrorMessage("Unknown packet!");
+                        Logging.logErrorMessage("Unhandled packet!");
                         Logging.logInfoMessage("Src ip:" + this.src_ip);
                         Logging.logInfoMessage("Dest ip: " + this.dest_ip);
-                    }
-                }
+                        this.is_processable = false;
 
-                if (this.uuid == null) {
-                    Logging.logErrorMessage("Failed to generate UUID for packet.");
-                    if(this.isIPv6){
-                        throw new IPv6DeviceException();
                     }
+
+                    if (this.uuid == null && this.is_processable) {
+                        Logging.logErrorMessage("Failed to generate UUID for packet.");
+                    }
+                } catch (NoSuchAlgorithmException e) {
+                    Logging.logErrorMessage("Error initialising connections for device " + src_mac_address);
+                    e.printStackTrace();
                 }
-            } catch(NoSuchAlgorithmException e) {
-                Logging.logErrorMessage("Error initialising connections for device " + src_mac_address);
-                e.printStackTrace();
+            }
+        } else { // IPv6
+            if(this.is_broadcast_traffic){
+                try {
+
+                    if(NetworkIdentification.ipToLong(dest_ip_bytes) >= NetworkIdentification.ipToLong(InetAddress.getByName("fe80::"))
+                        || NetworkIdentification.ipToLong(dest_ip_bytes) <= NetworkIdentification.ipToLong(InetAddress.getByName("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"))
+                        || dest_ip_bytes == InetAddress.getByAddress(Main.BROADCAST_SUBNET_ADDRESS)
+                        || InetAddress.getByName("0:0:0:0:0:0:0:0").equals(dest_ip_bytes)) {
+                        this.uuid = UUIDGenerator.generateUUID(src_mac_address);
+                        DeviceHostnameCache.instance.addDevice(src_hostname, uuid, true);
+                    } else {
+                        this.uuid = UUIDGenerator.generateUUID(dest_mac_address);
+                        DeviceHostnameCache.instance.addDevice(dest_hostname, uuid, true);
+                    }
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                } catch (UnknownHostException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                Logging.logInfoMessage("Ignoring standard ipv6 traffic.");
             }
         }
 
@@ -317,5 +341,12 @@ public class PacketWrapper {
 
     public boolean isLocationable(){
         return this.is_locationable && this.is_broadcast_traffic;
+    }
+
+    public boolean isProcessable() {
+        return is_processable;
+    }
+    public boolean isIPv6(){
+        return this.isIPv6;
     }
 }

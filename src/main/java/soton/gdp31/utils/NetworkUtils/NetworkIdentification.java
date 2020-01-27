@@ -147,9 +147,11 @@ public class NetworkIdentification {
             Logging.logInfoMessage("Loaded gateway ip of " + InetAddress.getByAddress(address).toString());
             return address;
         } catch (SocketException e) {
-            e.printStackTrace();
+            Logging.logErrorMessage("Failed to load Gateway from internal routing. Attempting again.");
+            // e.printStackTrace();
         } catch (UnknownHostException e) {
-            e.printStackTrace();
+            Logging.logErrorMessage("Failed to load Gateway from internal routing. Attempting again.");
+            // e.printStackTrace();
         }
         return null;
     }
