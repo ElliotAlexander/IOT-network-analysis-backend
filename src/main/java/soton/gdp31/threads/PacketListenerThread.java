@@ -40,6 +40,7 @@ public class PacketListenerThread extends Thread {
 
     @Override
     public void run() {
+        Logging.logInfoMessage("Started packet listener thread.");
         while (handle.isOpen()) {
             EthernetPacket ethernet_packet = null;
             try {

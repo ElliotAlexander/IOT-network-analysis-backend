@@ -138,6 +138,9 @@ public class PacketWrapper {
             } else {
                 boolean src_is_internal = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getSrcAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
                 boolean dest_is_internal = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getDstAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
+                Logging.logInfoMessage(ipPacket.getHeader().getSrcAddr().getHostAddress());
+                Logging.logInfoMessage(ipPacket.getHeader().getDstAddr().getHostAddress());
+
                 this.is_internal_traffic = (dest_is_internal && src_is_internal);
                 try {
                     if (is_internal_traffic) {      // Is the traffic purely internal? Or is just the source internal
@@ -151,6 +154,7 @@ public class PacketWrapper {
                             DeviceHostnameCache.instance.addDevice(src_hostname, uuid, true);
                             associated_mac_address = src_mac_address;
                             associated_hostname = src_hostname;
+
                         } else {        // Internal traffic between devices
                             this.uuid = UUIDGenerator.generateUUID(src_mac_address);
                             DeviceHostnameCache.instance.addDevice(src_hostname, uuid, true);
@@ -340,7 +344,7 @@ public class PacketWrapper {
     }
 
     public boolean isLocationable(){
-        return this.is_locationable && this.is_broadcast_traffic;
+        return this.is_locationable && !this.is_broadcast_traffic;
     }
 
     public boolean isProcessable() {

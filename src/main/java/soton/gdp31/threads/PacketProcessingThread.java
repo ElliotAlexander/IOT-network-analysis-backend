@@ -4,6 +4,7 @@ import soton.gdp31.database.DBConnection;
 import soton.gdp31.database.DBDeviceHandler;
 import soton.gdp31.database.DBLocationHandler;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
+import soton.gdp31.logger.Logging;
 import soton.gdp31.manager.DeviceListManager;
 import soton.gdp31.utils.GeoIpLocation.LocationFinder;
 import soton.gdp31.utils.NetworkUtils.HostnameFetcher;
@@ -100,6 +101,7 @@ public class PacketProcessingThread extends Thread {
                     String location_address = p.getLocation_address();
 
                     // Has this address been located before, within a list.
+                    Logging.logInfoMessage("Starting location");
                     Boolean address_has_located = geoLocationCache.needsLocating(device_uuid, location_address);
 
                     if(address_has_located){
@@ -108,6 +110,8 @@ public class PacketProcessingThread extends Thread {
                         // Store the location in the cache.
                         if(location != null) {
                             geoLocationCache.storeLocation(device_uuid, location_address, location);
+                        } else {
+                            Logging.logWarnMessage("Failed to locate error for " + location_address);
                         }
                     } else { // Device has contacted it before in the Cache.
                             // Do nothing.
