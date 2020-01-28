@@ -5,6 +5,7 @@ import soton.gdp31.database.DBConnection;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.exceptions.database.DBUknownDeviceException;
 
+import java.net.InetAddress;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.*;
@@ -28,10 +29,17 @@ public class DeviceWrapper {
     private long data_transferred = 0;
     private long data_in = 0;
     private long data_out = 0;
+    private InetAddress ip;
 
     private List<DnsQuestion> dns_queries;
 
     private long last_update_time = -1;
+
+    public DeviceWrapper(byte[] uuid, InetAddress ip){
+        this.uuid = uuid;
+        this.ip = ip;
+        this.dns_queries = new ArrayList<>();
+    }
 
     public DeviceWrapper(byte[] uuid){
         this.uuid = uuid;
@@ -40,6 +48,14 @@ public class DeviceWrapper {
 
     public byte[] getUUID() {
         return uuid;
+    }
+
+    public InetAddress getIp(){
+        return this.ip;
+    }
+
+    public void setIp(InetAddress ip){
+        this.ip = ip;
     }
 
     public long getHttpsPacketCount() {

@@ -6,6 +6,7 @@ import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.wrappers.DeviceWrapper;
 import soton.gdp31.wrappers.PacketWrapper;
 
+import java.net.InetAddress;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -79,8 +80,8 @@ public class DeviceListManager {
         return device_list.stream().filter(d -> Arrays.equals(d.getUUID(),uuid)).collect(Collectors.toCollection(ArrayList::new)).get(0);
     }
 
-    public DeviceWrapper addDevice(byte[] uuid){
-        DeviceWrapper w = new DeviceWrapper(uuid);
+    public DeviceWrapper addDevice(byte[] uuid, InetAddress ip){
+        DeviceWrapper w = new DeviceWrapper(uuid, ip);
         w.setLastUpdateTime(System.currentTimeMillis());
         device_list.add(w);
         return w;

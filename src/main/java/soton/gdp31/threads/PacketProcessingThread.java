@@ -79,6 +79,16 @@ public class PacketProcessingThread extends Thread {
                 // Get the correct device wrapper for the source / destination of this packet.
                 DeviceWrapper deviceWrapper = deviceListManager.getDevice(p.getUUID());
 
+                if(deviceWrapper.getIp() == null){
+                    deviceWrapper.setIp(p.getAssociatedIpAddress());
+                    Logging.logInfoMessage("Associated " + p.getAssociatedHostname() + " with ip " + p.getAssociatedIpAddress());
+                } else if(!p.getAssociatedIpAddress().equals(deviceWrapper.getIp())){
+                    Logging.logInfoMessage("Updating ip address for device " + p.getUUID());
+                    Logging.logInfoMessage("Old ip: " + deviceWrapper.getIp());
+                    Logging.logInfoMessage("New ip: " + p.getAssociatedIpAddress());
+                    device_database_handler.upateDeviceIp(p.getUUID(), p.getAssociatedIpAddress());
+                }
+
                 // Update internal representation.
                 if (p.isHTTPS()) {
                     deviceWrapper.setHttpsPacketCount(deviceWrapper.getHttpsPacketCount() + 1);
@@ -135,12 +145,11 @@ public class PacketProcessingThread extends Thread {
                 }
             } else {
                 // If we haven't seen a device before.
-                System.out.println("Found new device " + p.getUUID());
-                DeviceWrapper device = deviceListManager.addDevice(p.getUUID());
-                System.out.println("Hostname: " + HostnameFetcher.fetchHostname(p.getSrcIp()));
+                System.out.println("Found new device " + p.getUUID() + " with ip " + p.getAssociatedIpAddress());
+                DeviceWrapper device = deviceListManager.addDevice(p.getUUID(), p.getAssociatedIpAddress());
+                System.out.println("Hostname: " + p.getAssociatedHostname());
                 device_database_handler.updatePacketCounts(device, System.currentTimeMillis());
             }
-
         }
     }
 }
