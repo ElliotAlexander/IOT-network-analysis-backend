@@ -3,11 +3,15 @@ package soton.gdp31.database;
 
 import main.java.soton.gdp31.utils.DeviceVendor.VendorChecker;
 import org.pcap4j.packet.DnsQuestion;
+import org.pcap4j.util.Inet4NetworkAddress;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.cache.DeviceUUIDCache;
 import soton.gdp31.wrappers.DeviceWrapper;
 import soton.gdp31.wrappers.PacketWrapper;
 
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.sql.*;
 import java.time.ZonedDateTime;
 import java.util.Iterator;
@@ -174,5 +178,19 @@ public class DBDeviceHandler {
             new DBExceptionHandler(e, database_connection_handler);
         }
 
+    }
+
+    public void upateDeviceIp(byte[] uuid, InetAddress ip_address){
+        String deviceStatsOverTimeInsertQuery = "UPDATE backend.devices SET internal_ip_v4 = ?, internal_ip_v6 = ? WHERE uuid = ?";
+        boolean isIpv4 = ip_address instanceof Inet4Address;
+        try {
+            PreparedStatement preparedStatement = c.prepareStatement(deviceStatsOverTimeInsertQuery);
+            preparedStatement.setString(1, isIpv4 ? ip_address.getHostAddress() : null);
+            preparedStatement.setString(2, !isIpv4 ? null : ip_address.getHostAddress());
+            preparedStatement.setBytes(3, uuid);
+            preparedStatement.execute();
+        } catch (SQLException e){
+            new DBExceptionHandler(e, database_connection_handler);
+        }
     }
 }

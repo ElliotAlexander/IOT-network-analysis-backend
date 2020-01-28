@@ -1,20 +1,10 @@
 package soton.gdp31.utils.GeoIpLocation;
 
-import com.maxmind.db.CHMCache;
-import com.maxmind.db.NoCache;
-import com.maxmind.db.NodeCache;
-import com.maxmind.db.Reader.FileMode;
-import com.maxmind.geoip2.DatabaseReader;
-import com.maxmind.geoip2.exception.AddressNotFoundException;
-import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.maxmind.geoip2.model.CityResponse;
-import com.maxmind.geoip2.*;
-import com.maxmind.geoip2.model.*;
 import com.maxmind.geoip2.record.Country;
 import com.maxmind.geoip2.record.City;
 import com.maxmind.geoip2.record.Location;
 
-import java.sql.Time;
 import java.sql.Timestamp;
 
 
