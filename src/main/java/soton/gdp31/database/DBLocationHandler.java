@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 
+import main.java.soton.gdp31.utils.TorChecker.TorChecker;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.utils.GeoIpLocation.GeoLocation;
 import soton.gdp31.utils.GeoIpLocation.LocationFinder;
@@ -19,11 +20,13 @@ public class DBLocationHandler {
     private final soton.gdp31.database.DBConnection database_connection_handler;
     private Connection c;
     private LocationFinder finder;
+    private main.java.soton.gdp31.utils.TorChecker.TorChecker torChecker;
 
     public DBLocationHandler(soton.gdp31.database.DBConnection database_connection_handler) throws DBConnectionClosedException {
         this.database_connection_handler = database_connection_handler;
         this.c = database_connection_handler.getConnection();
         this.finder = new LocationFinder();
+        this.torChecker = new TorChecker();
     }
 
     public void addToDatabase(byte[] uuid, String ipAddress, GeoLocation geoLocation) {
@@ -35,8 +38,8 @@ public class DBLocationHandler {
 
         try {
             String insert_query = "INSERT INTO ip_address_location(" +
-                    "uuid, ip_address, latitude, longitude, last_scanned" +
-                    " VALUES(?,?,?,?,?)";
+                    "uuid, ip_address, latitude, longitude, last_scanned, is_tor_node" +
+                    " VALUES(?,?,?,?,?,?)";
             PreparedStatement preparedStatement = c.prepareStatement(insert_query);
             preparedStatement.setBytes(1, uuid);
             preparedStatement.setString(2, ipAddress);
@@ -45,6 +48,7 @@ public class DBLocationHandler {
             preparedStatement.setTimestamp(5, new Timestamp(
                     ZonedDateTime.now().toInstant().toEpochMilli()
             ));
+            preparedStatement.setBoolean(6, torChecker.checkNodeList(ipAddress));
         } catch (SQLException e) {
             new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
         }
