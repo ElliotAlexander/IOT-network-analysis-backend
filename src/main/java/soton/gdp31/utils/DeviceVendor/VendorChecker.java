@@ -28,11 +28,9 @@ public class VendorChecker {
                 // process the line.
                 boolean flag = line.toLowerCase().contains(oui.toLowerCase());
 
-                soton.gdp31.logger.Logging.logInfoMessage(oui);
                 if (flag) {
                     String[] data = pattern.split(line);
                     String vendor = data[1];
-                    soton.gdp31.logger.Logging.logInfoMessage("VENDOR FOUND: " + vendor);
                     return vendor;
                 }
             }

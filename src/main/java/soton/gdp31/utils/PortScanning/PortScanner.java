@@ -1,5 +1,7 @@
 package main.java.soton.gdp31.utils.PortScanning;
 
+import javax.annotation.processing.Completion;
+import javax.sound.sampled.Port;
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
@@ -31,6 +33,7 @@ public class PortScanner {
         final int timeout = 200;
         final List<Future<PortScanResult>> futures = new ArrayList<>();
 
+
         soton.gdp31.logger.Logging.logInfoMessage("Starting scan .... on ... " + ip);
         for(int port = 1; port <= 65535; port++){
             futures.add(is_tcp_port_open(es, ip, port, timeout));
@@ -40,9 +43,11 @@ public class PortScanner {
         ArrayList<PortScanResult> results = new ArrayList<>();
 
         try{
+            soton.gdp31.logger.Logging.logInfoMessage("Starting for loop.");
             for (final Future<PortScanResult> f : futures) {
                 results.add(f.get());
             }
+            soton.gdp31.logger.Logging.logInfoMessage("Finished for loop.");
 
         } catch (InterruptedException e) {
             soton.gdp31.logger.Logging.logWarnMessage("Interrupted Exception error thrown when attempting to scan device: " + ip);

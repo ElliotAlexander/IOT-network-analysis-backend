@@ -12,6 +12,7 @@ import soton.gdp31.manager.DeviceListManager;
 import soton.gdp31.utils.GeoIpLocation.LocationFinder;
 import soton.gdp31.utils.NetworkUtils.HostnameFetcher;
 import soton.gdp31.utils.PacketProcessingQueue;
+import soton.gdp31.utils.ScanProcessingQueue;
 import soton.gdp31.wrappers.DeviceWrapper;
 import soton.gdp31.wrappers.PacketWrapper;
 import soton.gdp31.cache.GeoLocationCache;
@@ -149,8 +150,8 @@ public class PacketProcessingThread extends Thread {
                 System.out.println("Hostname: " + HostnameFetcher.fetchHostname(p.getSrcIp()));
                 device_database_handler.updatePacketCounts(device, System.currentTimeMillis());
 
-                // Scan ports initially.
-                scanPorts(p, true);
+                // Add to scan ports queue.
+                ScanProcessingQueue.instance.scanQueue.add(p);
             }
 
         }
