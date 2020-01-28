@@ -1,6 +1,7 @@
 package soton.gdp31;
 
 
+import main.java.soton.gdp31.threads.PortScanManagerThread;
 import soton.gdp31.config.ConfigLoader;
 import soton.gdp31.exceptions.network.InvalidInterfaceAddressException;
 import soton.gdp31.logger.Logging;
@@ -49,6 +50,7 @@ public class Main {
     public static String hardcode_gateway_ip;
 
     public static final int PPT_THREAD_COUNT = 1;
+    public static final int SCAN_THREAD_COUNT = 2;
 
     public static void main(String[] args) {
         new Main();
@@ -90,11 +92,20 @@ public class Main {
         ArrayList<Thread> threadPool = new ArrayList<Thread>();
         threadPool.add(plt);
 
+        // Packet Processing threads.
         for(int i = 0; i < PPT_THREAD_COUNT; i++){
             Logging.logInfoMessage("Starting packet processing thread number " + i);
             PacketProcessingThread ppt = new PacketProcessingThread();
             ppt.start();
             threadPool.add(ppt);
+        }
+
+        // PortScan Threads.
+        for(int i = 0; i < SCAN_THREAD_COUNT; i++){
+            Logging.logInfoMessage("Starting port scanning thread number " + i);
+            PortScanManagerThread pst = new PortScanManagerThread();
+            pst.start();
+            threadPool.add(pst);
         }
 
         while(true){

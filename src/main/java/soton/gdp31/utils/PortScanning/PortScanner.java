@@ -66,7 +66,9 @@ public class PortScanner {
         while(i.hasNext()){
             PortScanResult scanResult = (PortScanResult) i.next();
             int portNumber = scanResult.getPort();
-            list_of_ints.add(portNumber);
+            if(scanResult.isOpen()) {
+                list_of_ints.add(portNumber);
+            }
         }
 
         StringBuilder sb = new StringBuilder();

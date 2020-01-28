@@ -59,7 +59,7 @@ public class PortScanManagerThread extends Thread {
                     e.printStackTrace();
                 }
             }
-
+            soton.gdp31.logger.Logging.logInfoMessage("Manager starting scan on: " + p.getAssociatedHostname());
             scanPorts(p, true);
         }
 

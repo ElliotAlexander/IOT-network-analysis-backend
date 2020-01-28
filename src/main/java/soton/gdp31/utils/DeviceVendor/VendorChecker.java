@@ -31,6 +31,7 @@ public class VendorChecker {
                 if (flag) {
                     String[] data = pattern.split(line);
                     String vendor = data[1];
+                    soton.gdp31.logger.Logging.logInfoMessage("Vendor: " + vendor);
                     return vendor;
                 }
             }

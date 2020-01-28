@@ -18,7 +18,6 @@ public class DBScanHandler {
     public void addToDatabase(byte[] uuid, String list_of_ports){
         // Adds a string of open ports, delimited by a comma.
         // e.g. "2,54,4380,10000," shows that ports 2, 54, 4380 and 10,000 are open.
-        if(!soton.gdp31.cache.DeviceUUIDCache.DeviceObjectCacheInstance(database_connection_handler).checkDeviceExists(uuid)) {
             try {
                 String insert_query = "INSERT INTO backend.port_scanning(" +
                         "uuid, open_tcp_ports, last_scanned)" +
@@ -34,9 +33,7 @@ public class DBScanHandler {
             } catch (SQLException e) {
                 new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
             }
-        } else {
-            soton.gdp31.logger.Logging.logInfoMessage("Unable to add scanned ports to database as the given device is not in the database.");
-        }
+
     }
 
     public void updateDatabase(byte[] uuid, String list_of_ports) {
