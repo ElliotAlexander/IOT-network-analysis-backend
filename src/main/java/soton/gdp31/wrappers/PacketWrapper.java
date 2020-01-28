@@ -370,12 +370,14 @@ public class PacketWrapper {
     }
 
     public boolean isPublicIP(String ipAddress) throws UnknownHostException{
+        boolean publicIP = true;
         long ipToTest = ipToLong(ipAddress);
 
         long privLow10 = ipToLong("10.0.0.0");
         long privHigh10 = ipToLong("10.255.255.255");
 
         boolean result10 = ipToTest >= privLow10 && ipToTest <= privHigh10;
+
 
         long privLow172 = ipToLong("172.16.0.0");
         long privHigh172 = ipToLong("172.31.255.255");
@@ -387,8 +389,16 @@ public class PacketWrapper {
 
         boolean result192 = ipToTest >= privLow192 && ipToTest <= privHigh192;
 
-        return !(result10 && result172 && result192);
+        long privLowMulti = ipToLong("224.0.0.0");
+        long privHighMulti= ipToLong("224.0.0.255");
 
+        boolean resultMulti = ipToTest >= privLowMulti && ipToTest <= privHighMulti;
+
+        if(result10 || result172 || result192 || resultMulti){
+            publicIP = false;
+        }
+
+        return publicIP;
     }
 
 }

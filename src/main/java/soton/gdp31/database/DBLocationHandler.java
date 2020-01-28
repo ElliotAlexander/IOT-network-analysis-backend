@@ -10,7 +10,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 
-import main.java.soton.gdp31.utils.TorChecker.TorChecker;
+import main.java.soton.gdp31.utils.TorExitNodes.TorChecker;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.utils.GeoIpLocation.GeoLocation;
 import soton.gdp31.utils.GeoIpLocation.LocationFinder;
@@ -20,7 +20,7 @@ public class DBLocationHandler {
     private final soton.gdp31.database.DBConnection database_connection_handler;
     private Connection c;
     private LocationFinder finder;
-    private main.java.soton.gdp31.utils.TorChecker.TorChecker torChecker;
+    private main.java.soton.gdp31.utils.TorExitNodes.TorChecker torChecker;
 
     public DBLocationHandler(soton.gdp31.database.DBConnection database_connection_handler) throws DBConnectionClosedException {
         this.database_connection_handler = database_connection_handler;
@@ -39,7 +39,7 @@ public class DBLocationHandler {
 
         try {
             String insert_query = "INSERT INTO ip_address_location(" +
-                    "uuid, ip_address, latitude, longitude, last_scanned, is_tor_node" +
+                    "uuid, ip_address, latitude, longitude, last_scanned" +
                     " VALUES(?,?,?,?,?,?)";
             PreparedStatement preparedStatement = c.prepareStatement(insert_query);
             preparedStatement.setBytes(1, uuid);
@@ -49,7 +49,6 @@ public class DBLocationHandler {
             preparedStatement.setTimestamp(5, new Timestamp(
                     ZonedDateTime.now().toInstant().toEpochMilli()
             ));
-            preparedStatement.setBoolean(6, torNode);
 
             preparedStatement.executeQuery();
         } catch (SQLException e) {
@@ -78,27 +77,5 @@ public class DBLocationHandler {
         }
     }
 
-    public void addTorNode(byte[] uuid, String ipAddress, Boolean torNode) {
 
-        try{
-            String insert_query = "INSRET INTO ip_address_location(" +
-            "uuid, ip_address, is_tor_node) " +
-                    "VALUES(?,?,?) " +
-                    "ON CONFLICT (uuid, ip_address) " +
-                    "DO UPDATE SET is_tor_node = ?";
-
-            PreparedStatement ps = c.prepareStatement(insert_query);
-
-            ps.setBytes(1, uuid);
-            ps.setString(2, ipAddress);
-            ps.setBoolean(3, torNode);
-            ps.setBoolean(4, torNode);
-
-            ps.executeQuery();
-            soton.gdp31.logger.Logging.logInfoMessage("Inserted Tor Exit Node detection for: " + ipAddress);
-        } catch (SQLException e) {
-            soton.gdp31.logger.Logging.logInfoMessage("Failed to insert Tor Exit Node detection for: " + ipAddress);
-            e.printStackTrace();
-        }
-    }
 }

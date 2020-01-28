@@ -18,7 +18,7 @@ public class GeoLocationCache {
     private Connection connection;
     private Long last_pushed;
 
-    private main.java.soton.gdp31.utils.TorChecker.TorChecker tor_checker;
+    private main.java.soton.gdp31.utils.TorExitNodes.TorChecker tor_checker;
 
     // Destination address cache. IP address -> Last seen epoch time.
 
@@ -53,7 +53,7 @@ public class GeoLocationCache {
         this.connection = database_connection_handler.getConnection();
         this.last_pushed = System.currentTimeMillis();
 
-        this.tor_checker = new main.java.soton.gdp31.utils.TorChecker.TorChecker();
+        this.tor_checker = new main.java.soton.gdp31.utils.TorExitNodes.TorChecker();
     }
 
     public boolean needsLocating(byte[] given_uuid, String given_ip_address){
@@ -184,8 +184,8 @@ public class GeoLocationCache {
 
                 String query =
                         "INSERT INTO backend.ip_address_location" +
-                                "(uuid, ip_address, latitude, longitude, last_scanned, is_tor_node) " +
-                                "VALUES (?,?,?,?,?,?) " +
+                                "(uuid, ip_address, latitude, longitude, last_scanned) " +
+                                "VALUES (?,?,?,?,?) " +
                                 "ON CONFLICT DO NOTHING; ";
 
                 PreparedStatement ps = null;
@@ -229,7 +229,6 @@ public class GeoLocationCache {
                         ps.setDouble(3, latitude);
                         ps.setDouble(4, longitude);
                         ps.setTimestamp(5, last_scanned);
-                        ps.setBoolean(6, tor_checker.checkNodeList(ip_address));
 
                         ps.addBatch();
 

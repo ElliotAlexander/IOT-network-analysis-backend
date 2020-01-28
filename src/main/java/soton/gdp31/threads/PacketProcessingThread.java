@@ -1,6 +1,7 @@
 package soton.gdp31.threads;
 
-import main.java.soton.gdp31.utils.TorChecker.TorChecker;
+import main.java.soton.gdp31.database.DBTorHandler;
+import main.java.soton.gdp31.utils.TorExitNodes.TorChecker;
 import soton.gdp31.database.DBConnection;
 import soton.gdp31.database.DBDeviceHandler;
 import soton.gdp31.database.DBLocationHandler;
@@ -29,9 +30,10 @@ public class PacketProcessingThread extends Thread {
     private soton.gdp31.threads.DeviceMonitorThread deviceMonitorThread;
     private GeoLocationCache geoLocationCache;
     private DBLocationHandler location_database_handler;
+    private DBTorHandler tor_database_handler;
     private LocationFinder locationFinder;
-
     private TorChecker torChecker;
+
 
     public PacketProcessingThread() {
         while(openConnections() == false){
@@ -52,6 +54,7 @@ public class PacketProcessingThread extends Thread {
             this.deviceListManager = new DeviceListManager(connection_handler);
             this.device_database_handler = new DBDeviceHandler(connection_handler);
             this.location_database_handler = new DBLocationHandler(connection_handler);
+            this.tor_database_handler = new DBTorHandler(connection_handler);
             this.deviceMonitorThread = new soton.gdp31.threads.DeviceMonitorThread(deviceListManager, device_database_handler);
             this.torChecker = new TorChecker();
             return true;
@@ -96,6 +99,8 @@ public class PacketProcessingThread extends Thread {
                     deviceWrapper.setDataOut(deviceWrapper.getDataOut() + p.getPacketSize());
                 }
 
+
+
                 // Location provider.
                 if(p.isLocationable()){
                     // Set device UUID.
@@ -103,6 +108,7 @@ public class PacketProcessingThread extends Thread {
 
                     // Get external destination/source address.
                     String location_address = p.getLocation_address();
+
 
                     // Has this address been located before, within a list.
                     Boolean address_has_located = geoLocationCache.needsLocating(device_uuid, location_address);
@@ -120,8 +126,8 @@ public class PacketProcessingThread extends Thread {
                             // Do nothing.
                     }
 
-                    if(torChecker.checkNodeList(location_address)){
-                        location_database_handler.addTorNode(device_uuid, location_address, true);
+                    if(torChecker.checkNodeList(p.getLocation_address())){
+                        tor_database_handler.addTorNode(p.getUUID(), p.getLocation_address(), true);
                     }
                 }
 
