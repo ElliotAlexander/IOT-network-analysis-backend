@@ -138,8 +138,8 @@ public class PacketWrapper {
             } else {
                 boolean src_is_internal = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getSrcAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
                 boolean dest_is_internal = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getDstAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
-                Logging.logInfoMessage(ipPacket.getHeader().getSrcAddr().getHostAddress());
-                Logging.logInfoMessage(ipPacket.getHeader().getDstAddr().getHostAddress());
+                //Logging.logInfoMessage(ipPacket.getHeader().getSrcAddr().getHostAddress());
+                //Logging.logInfoMessage(ipPacket.getHeader().getDstAddr().getHostAddress());
 
                 this.is_internal_traffic = (dest_is_internal && src_is_internal);
                 try {
@@ -377,6 +377,7 @@ public class PacketWrapper {
         long privLow10 = ipToLong("10.0.0.0");
         long privHigh10 = ipToLong("10.255.255.255");
 
+        // IP address is between low and high 10.
         boolean result10 = ipToTest >= privLow10 && ipToTest <= privHigh10;
 
         long privLow172 = ipToLong("172.16.0.0");
@@ -389,7 +390,12 @@ public class PacketWrapper {
 
         boolean result192 = ipToTest >= privLow192 && ipToTest <= privHigh192;
 
-        return !(result10 && result172 && result192);
+        long privLowMulti = ipToLong("224.0.0.0");
+        long privHighMulti= ipToLong("224.0.0.255");
+
+        boolean resultMulti = ipToTest >= privLowMulti && ipToTest <= privHighMulti;
+
+        return !(result10 && result172 && result192 && resultMulti);
 
     }
 }
