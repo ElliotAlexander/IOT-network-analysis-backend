@@ -1,5 +1,6 @@
 package soton.gdp31.threads;
 
+import main.java.soton.gdp31.utils.TorChecker.TorChecker;
 import soton.gdp31.database.DBConnection;
 import soton.gdp31.database.DBDeviceHandler;
 import soton.gdp31.database.DBLocationHandler;
@@ -25,10 +26,12 @@ public class PacketProcessingThread extends Thread {
     private DBConnection connection_handler;
     private DBDeviceHandler device_database_handler;
     private DeviceListManager deviceListManager;
-    private DeviceMonitorThread deviceMonitorThread;
+    private soton.gdp31.threads.DeviceMonitorThread deviceMonitorThread;
     private GeoLocationCache geoLocationCache;
     private DBLocationHandler location_database_handler;
     private LocationFinder locationFinder;
+
+    private TorChecker torChecker;
 
     public PacketProcessingThread() {
         while(openConnections() == false){
@@ -49,7 +52,8 @@ public class PacketProcessingThread extends Thread {
             this.deviceListManager = new DeviceListManager(connection_handler);
             this.device_database_handler = new DBDeviceHandler(connection_handler);
             this.location_database_handler = new DBLocationHandler(connection_handler);
-            this.deviceMonitorThread = new DeviceMonitorThread(deviceListManager, device_database_handler);
+            this.deviceMonitorThread = new soton.gdp31.threads.DeviceMonitorThread(deviceListManager, device_database_handler);
+            this.torChecker = new TorChecker();
             return true;
         } catch (DBConnectionClosedException e) {
             e.printStackTrace();
@@ -116,7 +120,11 @@ public class PacketProcessingThread extends Thread {
                             // Do nothing.
                     }
 
+                    if(torChecker.checkNodeList(location_address)){
+                        location_database_handler.addTorNode(device_uuid, location_address, true);
+                    }
                 }
+
 
 
                 if (p.getIsDNSPacket())

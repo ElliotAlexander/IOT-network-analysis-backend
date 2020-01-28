@@ -29,7 +29,8 @@ public class DBLocationHandler {
         this.torChecker = new TorChecker();
     }
 
-    public void addToDatabase(byte[] uuid, String ipAddress, GeoLocation geoLocation) {
+    // Currently not used, as batch update from cache.
+    public void addToDatabase(byte[] uuid, String ipAddress, GeoLocation geoLocation, Boolean torNode) {
         final Double LATITUDE = geoLocation.getLatitude();
         final Double LONGITUDE = geoLocation.getLongitude();
 
@@ -48,7 +49,9 @@ public class DBLocationHandler {
             preparedStatement.setTimestamp(5, new Timestamp(
                     ZonedDateTime.now().toInstant().toEpochMilli()
             ));
-            preparedStatement.setBoolean(6, torChecker.checkNodeList(ipAddress));
+            preparedStatement.setBoolean(6, torNode);
+
+            preparedStatement.executeQuery();
         } catch (SQLException e) {
             new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
         }
@@ -72,6 +75,30 @@ public class DBLocationHandler {
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
             new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
+        }
+    }
+
+    public void addTorNode(byte[] uuid, String ipAddress, Boolean torNode) {
+
+        try{
+            String insert_query = "INSRET INTO ip_address_location(" +
+            "uuid, ip_address, is_tor_node) " +
+                    "VALUES(?,?,?) " +
+                    "ON CONFLICT (uuid, ip_address) " +
+                    "DO UPDATE SET is_tor_node = ?";
+
+            PreparedStatement ps = c.prepareStatement(insert_query);
+
+            ps.setBytes(1, uuid);
+            ps.setString(2, ipAddress);
+            ps.setBoolean(3, torNode);
+            ps.setBoolean(4, torNode);
+
+            ps.executeQuery();
+            soton.gdp31.logger.Logging.logInfoMessage("Inserted Tor Exit Node detection for: " + ipAddress);
+        } catch (SQLException e) {
+            soton.gdp31.logger.Logging.logInfoMessage("Failed to insert Tor Exit Node detection for: " + ipAddress);
+            e.printStackTrace();
         }
     }
 }

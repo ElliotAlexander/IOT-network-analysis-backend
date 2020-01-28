@@ -138,8 +138,6 @@ public class PacketWrapper {
             } else {
                 boolean src_is_internal = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getSrcAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
                 boolean dest_is_internal = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getDstAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
-                Logging.logInfoMessage(ipPacket.getHeader().getSrcAddr().getHostAddress());
-                Logging.logInfoMessage(ipPacket.getHeader().getDstAddr().getHostAddress());
 
                 this.is_internal_traffic = (dest_is_internal && src_is_internal);
                 try {
@@ -392,4 +390,5 @@ public class PacketWrapper {
         return !(result10 && result172 && result192);
 
     }
+
 }
