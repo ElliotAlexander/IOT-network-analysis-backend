@@ -47,8 +47,8 @@ public class DeviceRating {
     private int tor_nodes_contacted;
 
 
-    public DeviceRating(){
-
+    public DeviceRating(byte[] uuid){
+        this.setUuid(uuid);
     }
 
     // Getters & Setters.

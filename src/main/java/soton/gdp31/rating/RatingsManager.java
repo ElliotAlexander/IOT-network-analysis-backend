@@ -9,6 +9,8 @@ import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.wrappers.DeviceWrapper;
 import soton.gdp31.database.DBConnection;
 import soton.gdp31.manager.DeviceListManager;
+import soton.gdp31.logger.Logging;
+import soton.gdp31.rating.DeviceRating;
 
 public class RatingsManager extends Thread{
 
@@ -30,13 +32,16 @@ public class RatingsManager extends Thread{
     @Override
     public void run() {
         while(true){
-                manager.getDevices().forEach((dWrapper) -> {
-                    if(twentySecondsAgo(dWrapper.getLast_rating_time())){
-                        DeviceRating rating = generateRating(dWrapper);
-                        rating_handler.addRating(rating);
-                        dWrapper.setLast_rating_time(System.currentTimeMillis());
+                for(DeviceWrapper device : manager.getDevices()){
+                    if(device.getIp() != null) {
+                        if(tenSecondsAgo(device.getLast_rating_time())) {
+                            DeviceRating rating = generateRating(device);
+                            rating_handler.addRating(rating);
+                            device.setLast_rating_time(System.currentTimeMillis());
+                        }
                     }
-                });
+
+                }
 
             try {
                 Thread.sleep(3000);
@@ -65,7 +70,7 @@ public class RatingsManager extends Thread{
         }
 
         // Create DeviceRating object.
-        DeviceRating rating = new DeviceRating();
+        DeviceRating rating = new DeviceRating(dWrapper.getUUID());
 
         // Setters for DeviceRating.
         // TODO: Move this to constructor if CBA.
@@ -75,6 +80,10 @@ public class RatingsManager extends Thread{
         rating.setUpload_normalized(upload_rating);
 
         rating.setOverall_rating(overall);
+
+        Logging.logInfoMessage("DEVICE RATING FOR DEVICE: " + dWrapper.getUUID() + " | IP: " + dWrapper.getIp());
+        Logging.logInfoMessage("HTTP: " + http_rating.toString() + " | OPEN: " + port_rating.toString() + " | TRAFFIC: " + port_traffic_rating.toString() + " | UPLOAD: " + upload_rating.toString());
+        Logging.logInfoMessage("OVERALL: " + overall);
         return rating;
     }
 
@@ -85,13 +94,19 @@ public class RatingsManager extends Thread{
         Long packet_count = dWrapper.getPacketCount();
         Long https_packet_count = dWrapper.getHttpsPacketCount();
 
-        Double percentage_of = ((double)https_packet_count/packet_count);
+        Double percentage_of = ((double)1.0 - https_packet_count/packet_count);
 
         return percentage_of;
     }
 
-    private Double genPortRating(soton.gdp31.wrappers.DeviceWrapper dWrapper) {
+    private Double genPortRating(DeviceWrapper dWrapper) {
         String open_ports_string = rating_handler.pullOpenPorts(dWrapper);
+        Logging.logInfoMessage(open_ports_string);
+
+        if(open_ports_string == null) {
+            Logging.logInfoMessage("NULL OPEN PORTS PULLED FOR DEVICE: " + dWrapper.getIp().getHostName());
+            return 0.0;
+        }
 
         String[] strArray = open_ports_string.split(",");
 
@@ -100,6 +115,7 @@ public class RatingsManager extends Thread{
         for(int i = 0; i < strArray.length; i++){
             open_ports.add(Integer.parseInt(strArray[i]));
         }
+
 
         // Build bad ports to have open.
         // From dummies.
@@ -136,8 +152,11 @@ public class RatingsManager extends Thread{
             return percentage_of;
         }
 
+
         private Double genPortTrafficRating(DeviceWrapper dWrapper){
             HashMap<Integer, Integer> portTraffic = dWrapper.getPortTraffic();
+            HashMap<Integer, Integer> secondClone = (HashMap<Integer, Integer>) portTraffic.clone();
+            HashMap<Integer, Integer> thirdClone = (HashMap<Integer, Integer>) portTraffic.clone();
 
         // Build bad ports to have open.
         // From dummies.
@@ -148,8 +167,8 @@ public class RatingsManager extends Thread{
         int[] gary_kessler_ports = new int[]{31, 1170, 1234, 1243, 1981, 2001, 2023, 2989, 3024, 3150, 3700, 4950, 6346, 6400, 6667, 6670, 12345, 12346, 16660, 20034, 20432, 20433, 27374, 27444, 27665, 30100, 31335, 31337, 33270, 33568, 40421, 60008, 65000};
 
         int really_bad_hits = containsAny(portTraffic.keySet(), really_bad_ports);
-        int gary_kessler_hits = containsAny(portTraffic.keySet(), gary_kessler_ports);
-        int high_hits = containsHigh(portTraffic.keySet());
+        int gary_kessler_hits = containsAny(secondClone.keySet(), gary_kessler_ports);
+        int high_hits = containsHigh(thirdClone.keySet());
 
         // Rating.
         Double rating = 0.0;
@@ -190,8 +209,8 @@ public class RatingsManager extends Thread{
         return Arrays.stream(arr).anyMatch(i -> i == key);
     }
 
-    public boolean twentySecondsAgo(Long last_security_rating){
+    public boolean tenSecondsAgo(Long last_security_rating){
         // Was last_security_rating more than 20 seconds ago?
-        return (System.currentTimeMillis() - last_security_rating > 20000);
+        return (System.currentTimeMillis() - last_security_rating > 10000);
     }
 }
