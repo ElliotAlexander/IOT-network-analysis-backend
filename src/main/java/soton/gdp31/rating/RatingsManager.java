@@ -9,6 +9,8 @@ import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.wrappers.DeviceWrapper;
 import soton.gdp31.database.DBConnection;
 import soton.gdp31.manager.DeviceListManager;
+import soton.gdp31.logger.Logging;
+import soton.gdp31.rating.DeviceRating;
 
 public class RatingsManager extends Thread{
 
@@ -30,13 +32,14 @@ public class RatingsManager extends Thread{
     @Override
     public void run() {
         while(true){
-                manager.getDevices().forEach((dWrapper) -> {
-                    if(twentySecondsAgo(dWrapper.getLast_rating_time())){
-                        DeviceRating rating = generateRating(dWrapper);
+                for(DeviceWrapper device : manager.getDevices()){
+                    if(device.getIp() != null) {
+                        DeviceRating rating = generateRating(device);
                         rating_handler.addRating(rating);
-                        dWrapper.setLast_rating_time(System.currentTimeMillis());
+                        device.setLast_rating_time(System.currentTimeMillis());
                     }
-                });
+
+                }
 
             try {
                 Thread.sleep(3000);
@@ -65,7 +68,7 @@ public class RatingsManager extends Thread{
         }
 
         // Create DeviceRating object.
-        DeviceRating rating = new DeviceRating();
+        DeviceRating rating = new DeviceRating(dWrapper.getUUID());
 
         // Setters for DeviceRating.
         // TODO: Move this to constructor if CBA.
@@ -75,6 +78,10 @@ public class RatingsManager extends Thread{
         rating.setUpload_normalized(upload_rating);
 
         rating.setOverall_rating(overall);
+
+        Logging.logInfoMessage("DEVICE RATING FOR DEVICE: " + dWrapper.getUUID() + " | IP: " + dWrapper.getIp());
+        Logging.logInfoMessage("HTTP: " + http_rating.toString() + " | OPEN: " + port_rating.toString() + " | TRAFFIC: " + port_traffic_rating.toString() + " | UPLOAD: " + upload_rating.toString());
+        Logging.logInfoMessage("OVERALL: " + overall);
         return rating;
     }
 
@@ -85,13 +92,19 @@ public class RatingsManager extends Thread{
         Long packet_count = dWrapper.getPacketCount();
         Long https_packet_count = dWrapper.getHttpsPacketCount();
 
-        Double percentage_of = ((double)https_packet_count/packet_count);
+        Double percentage_of = ((double)1.0 - https_packet_count/packet_count);
 
         return percentage_of;
     }
 
-    private Double genPortRating(soton.gdp31.wrappers.DeviceWrapper dWrapper) {
+    private Double genPortRating(DeviceWrapper dWrapper) {
         String open_ports_string = rating_handler.pullOpenPorts(dWrapper);
+        Logging.logInfoMessage(open_ports_string);
+
+        if(open_ports_string == null) {
+            Logging.logInfoMessage("NULL OPEN PORTS PULLED FOR DEVICE: " + dWrapper.getIp().getHostName());
+            return 0.0;
+        }
 
         String[] strArray = open_ports_string.split(",");
 
@@ -100,6 +113,7 @@ public class RatingsManager extends Thread{
         for(int i = 0; i < strArray.length; i++){
             open_ports.add(Integer.parseInt(strArray[i]));
         }
+
 
         // Build bad ports to have open.
         // From dummies.
@@ -131,6 +145,7 @@ public class RatingsManager extends Thread{
     private Double genUploadRating(DeviceWrapper dWrapper){
         Long upload = dWrapper.getDataOut();
         Long total = dWrapper.getDataTransferred();
+
 
         Double percentage_of = ((double) upload/total);
         return percentage_of;

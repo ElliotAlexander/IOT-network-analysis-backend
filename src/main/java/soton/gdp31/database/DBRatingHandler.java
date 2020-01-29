@@ -5,6 +5,7 @@ import soton.gdp31.rating.DeviceRating;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.rating.DeviceRating;
 import soton.gdp31.wrappers.DeviceWrapper;
+import soton.gdp31.database.DBConnection;
 
 import java.sql.*;
 
@@ -33,9 +34,9 @@ public class DBRatingHandler {
                             "VALUES(?,?,?,?," +
                             "?) " +
                             "ON CONFLICT (uuid) DO UPDATE" +
-                            "   SET https_rating = ? " +
-                            "       ports_rating = ?" +
-                            "       upload_rating = ?" +
+                            "   SET https_rating = ?, " +
+                            "       ports_rating = ?," +
+                            "       upload_rating = ?," +
                             "       overall = ?;";
 
             PreparedStatement ps = c.prepareStatement(insert_query);
@@ -49,12 +50,11 @@ public class DBRatingHandler {
 
             // On update
 
-            ps.setBytes(6, uuid);
-            ps.setDouble(7, https);
-            ps.setDouble(8, ports);
-            ps.setDouble(9, upload);
+            ps.setDouble(6, https);
+            ps.setDouble(7, ports);
+            ps.setDouble(8, upload);
 
-            ps.setDouble(10, overall);
+            ps.setDouble(9, overall);
 
             ps.executeUpdate();
 
@@ -79,6 +79,7 @@ public class DBRatingHandler {
 
             while (rs.next()) {
                 String list_of_ports = rs.getString(2);
+                Logging.logInfoMessage("OPEN PORTS: " + list_of_ports);
                 return list_of_ports;
             }
 

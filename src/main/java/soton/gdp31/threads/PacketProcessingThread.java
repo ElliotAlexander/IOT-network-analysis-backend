@@ -17,6 +17,7 @@ import soton.gdp31.wrappers.DeviceWrapper;
 import soton.gdp31.wrappers.PacketWrapper;
 import soton.gdp31.cache.GeoLocationCache;
 import soton.gdp31.utils.GeoIpLocation.GeoLocation;
+import soton.gdp31.rating.RatingsManager;
 
 /**
  * @Author Elliot Alexander
@@ -37,6 +38,8 @@ public class PacketProcessingThread extends Thread {
     private TorChecker torChecker;
 
     private DBScanHandler scan_database_handler;
+
+    private RatingsManager ratingsManager;
 
     public PacketProcessingThread() {
         while(openConnections() == false){
@@ -61,6 +64,7 @@ public class PacketProcessingThread extends Thread {
             this.tor_database_handler = new DBTorHandler(connection_handler);
             this.deviceMonitorThread = new soton.gdp31.threads.DeviceMonitorThread(deviceListManager, device_database_handler);
             this.torChecker = new TorChecker();
+            this.ratingsManager = new RatingsManager(connection_handler, deviceListManager);
             return true;
         } catch (DBConnectionClosedException e) {
             e.printStackTrace();
@@ -70,10 +74,12 @@ public class PacketProcessingThread extends Thread {
 
     @Override
     public void run() {
+        ratingsManager.start();
+
         while (true) {
 
             PacketWrapper p = PacketProcessingQueue.instance.packetQueue.poll();
-            Logging.logInfoMessage("PPT Size " + PacketProcessingQueue.instance.packetQueue.size());
+            //Logging.logInfoMessage("PPT Size " + PacketProcessingQueue.instance.packetQueue.size());
 
             if(p == null || !p.isProcessable()){
                 try {
@@ -99,9 +105,6 @@ public class PacketProcessingThread extends Thread {
                     deviceWrapper.setIp(p.getAssociatedIpAddress());
                     Logging.logInfoMessage("Associated " + p.getAssociatedHostname() + " with ip " + p.getAssociatedIpAddress());
                 } else if(!p.getAssociatedIpAddress().equals(deviceWrapper.getIp())){
-                    Logging.logInfoMessage("Updating ip address for device " + p.getUUID());
-                    Logging.logInfoMessage("Old ip: " + deviceWrapper.getIp());
-                    Logging.logInfoMessage("New ip: " + p.getAssociatedIpAddress());
                     device_database_handler.upateDeviceIp(p.getUUID(), p.getAssociatedIpAddress());
                 }
 
