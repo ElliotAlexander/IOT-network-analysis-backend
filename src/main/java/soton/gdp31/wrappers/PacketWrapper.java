@@ -420,10 +420,10 @@ public class PacketWrapper {
     }
 
     public int[] getUniquePorts(){
-        if(this.srcPort == this.destPort){
-            return new int[]{srcPort, destPort};
-        } else {
+        if(this.src_mac_address == this.associated_mac_address){
             return new int[]{srcPort};
+        } else {
+            return new int[]{destPort};
         }
     }
 

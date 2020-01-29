@@ -142,17 +142,17 @@ public class RatingsManager extends Thread{
         return 0.0;
     }
 
-    private Double genUploadRating(DeviceWrapper dWrapper){
-        Long upload = dWrapper.getDataOut();
-        Long total = dWrapper.getDataTransferred();
+        private Double genUploadRating(DeviceWrapper dWrapper){
+            Long upload = dWrapper.getDataOut();
+            Long total = dWrapper.getDataTransferred();
+            
+            Double percentage_of = ((double) upload/total);
+            return percentage_of;
+        }
 
 
-        Double percentage_of = ((double) upload/total);
-        return percentage_of;
-    }
-
-    private Double genPortTrafficRating(DeviceWrapper dWrapper){
-        HashMap<Integer, Integer> portTraffic = dWrapper.getPortTraffic();
+        private Double genPortTrafficRating(DeviceWrapper dWrapper){
+            HashMap<Integer, Integer> portTraffic = dWrapper.getPortTraffic();
 
         // Build bad ports to have open.
         // From dummies.
