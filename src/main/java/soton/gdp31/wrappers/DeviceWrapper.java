@@ -6,8 +6,9 @@ import org.pcap4j.packet.DnsQuestion;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
+import javafx.util.Pair;
 
 /**
  * @Author ElliotAlexander
@@ -35,38 +36,53 @@ public class DeviceWrapper {
     private long last_rating_time = -1;
     private long last_live_update_time = -1;
 
-    private ArrayList<Integer> port_traffic;
+    private HashMap<Integer, Integer> port_traffic;
 
     public DeviceWrapper(byte[] uuid, InetAddress ip){
         this.uuid = uuid;
         this.ip = ip;
         this.dns_queries = new ArrayList<>();
-        this.port_traffic = new ArrayList<>();
+        this.port_traffic = new HashMap<>();
     }
 
     public DeviceWrapper(byte[] uuid){
         this.uuid = uuid;
         this.dns_queries = new ArrayList<>();
-        this.port_traffic = new ArrayList<>();
+        this.port_traffic = new HashMap<>();
 
     }
 
     public String getPortTrafficString(){
-            ArrayList<Integer> results = getPort_traffic();
+            HashMap<Integer,Integer> results = getPortTraffic();
             StringBuilder sb  = new StringBuilder();
-            for(Integer i : results){
-                sb.append(sb.toString());
+            for(Integer i : results.keySet()){
+                sb.append(i + ":" + results.get(i) + ",");
             }
             String result = sb.toString();
-            return result;
+            return result.substring(0, result.length()-1);
     }
 
     public void addPortTraffic(int port){
-        if(!port_traffic.contains(port)){
-            port_traffic.add(port);
+        if(!port_traffic.keySet().contains(port)){
+            port_traffic.put(port, 1);
+        } else {
+            port_traffic.replace(port, port_traffic.get(port) + 1);
         }
     }
-    public ArrayList<Integer> getPort_traffic() {
+
+    public void addPortTraffic(int[] ports){
+        for(int i : ports){
+            addPortTraffic(i);
+        }
+    }
+
+    public void setPortTraffic(int port, int count){
+        if(!port_traffic.keySet().contains(port)){
+            port_traffic.put(port, count);
+        }
+    }
+
+    public HashMap<Integer, Integer> getPortTraffic() {
         return port_traffic;
     }
 

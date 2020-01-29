@@ -73,6 +73,7 @@ public class PacketProcessingThread extends Thread {
         while (true) {
 
             PacketWrapper p = PacketProcessingQueue.instance.packetQueue.poll();
+            Logging.logInfoMessage("PPT Size " + PacketProcessingQueue.instance.packetQueue.size());
 
             if(p == null || !p.isProcessable()){
                 try {
@@ -111,6 +112,8 @@ public class PacketProcessingThread extends Thread {
 
                 deviceWrapper.setPacketCount(deviceWrapper.getPacketCount() + 1);
                 deviceWrapper.setDataTransferred(deviceWrapper.getDataTransferred() + p.getPacketSize());
+                deviceWrapper.addPortTraffic(p.getUniquePorts());
+
                 if(p.getAssociatedMacAddress() ==  p.getDestMacAddress()){
                     deviceWrapper.setDataIn(deviceWrapper.getDataIn() + p.getPacketSize());
                 } else {

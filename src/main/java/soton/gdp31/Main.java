@@ -75,6 +75,7 @@ public class Main {
             Logging.logInfoMessage("Network Mask: " + InetAddress.getByAddress(this.SUBNET_MASK));
             Logging.logInfoMessage("System IP: " + InetAddress.getByAddress(this.SYSTEM_IP));
             Logging.logInfoMessage("Broadcast Subnet Address: " + InetAddress.getByAddress(this.BROADCAST_SUBNET_ADDRESS));
+
         } catch (UnknownHostException e) {
             Logging.logErrorMessage("Error fetching network information.");
             e.printStackTrace();
@@ -85,6 +86,7 @@ public class Main {
 
         // Instantiate
 
+        Logging.logInfoMessage("Available Cores: + " + Runtime.getRuntime().availableProcessors());
         // Start our listening thread.
         Logging.logInfoMessage("Starting packet listner thread");
         PacketListenerThread plt = new PacketListenerThread();

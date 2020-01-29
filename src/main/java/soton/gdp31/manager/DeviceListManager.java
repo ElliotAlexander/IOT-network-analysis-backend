@@ -66,7 +66,12 @@ public class DeviceListManager {
                 String portString = rs.getString(8);
                 if(!portString.isEmpty()){
                     ArrayList<String> portList = new ArrayList(Arrays.asList(portString.split(",")));
-                    portList.forEach( x -> dw.addPortTraffic(Integer.parseInt(x)));
+                    portList.forEach( x -> {
+                        String[] res = x.split(":");
+                        int port = Integer.parseInt(res[0]);
+                        int count = Integer.parseInt(res[1]);
+                        dw.setPortTraffic(port, count);
+                    });
                 }
                 device_list.add(dw);
             }

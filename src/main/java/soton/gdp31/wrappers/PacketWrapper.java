@@ -58,6 +58,7 @@ public class PacketWrapper {
 
     private byte[] uuid;
 
+
     private boolean is_locationable = false;
     private String location_address;
     public PacketWrapper(EthernetPacket p, long timestamp, long packet_count) throws InvalidIPPacketException, UnhandledTrafficException, IPv6DeviceException {
@@ -122,7 +123,6 @@ public class PacketWrapper {
         }
 
         if(!this.isIPv6) {
-
             if (this.is_broadcast_traffic) {
 
                     try {
@@ -268,6 +268,9 @@ public class PacketWrapper {
         }
 
         this.packetSize = p.length();
+        if(this.src_mac_address == null || this.dest_mac_address == null){
+            this.is_processable = false;
+        }
     }
 
     public boolean isIpPacket() {
@@ -414,6 +417,14 @@ public class PacketWrapper {
         }
 
         return publicIP;
+    }
+
+    public int[] getUniquePorts(){
+        if(this.srcPort == this.destPort){
+            return new int[]{srcPort, destPort};
+        } else {
+            return new int[]{srcPort};
+        }
     }
 
     public InetAddress getAssociatedIpAddress() {

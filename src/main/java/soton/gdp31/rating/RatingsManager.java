@@ -1,9 +1,7 @@
 package soton.gdp31.rating;
 
 import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.OptionalDouble;
+import java.util.*;
 import java.util.stream.DoubleStream;
 
 import soton.gdp31.database.DBRatingHandler;
@@ -111,9 +109,9 @@ public class RatingsManager extends Thread{
         // From https://www.garykessler.net/library/bad_ports.html
         int[] gary_kessler_ports = new int[]{31, 1170, 1234, 1243, 1981, 2001, 2023, 2989, 3024, 3150, 3700, 4950, 6346, 6400, 6667, 6670, 12345, 12346, 16660, 20034, 20432, 20433, 27374, 27444, 27665, 30100, 31335, 31337, 33270, 33568, 40421, 60008, 65000};
 
-        int really_bad_hits = containsAny(open_ports, really_bad_ports);
-        int gary_kessler_hits = containsAny(open_ports, gary_kessler_ports);
-        int high_hits = containsHigh(open_ports);
+        int really_bad_hits = containsAny(new HashSet<>(open_ports), really_bad_ports);
+        int gary_kessler_hits = containsAny(new HashSet<>(open_ports), gary_kessler_ports);
+        int high_hits = containsHigh(new HashSet<>(open_ports));
 
 
         // Rating.
@@ -139,7 +137,7 @@ public class RatingsManager extends Thread{
     }
 
     private Double genPortTrafficRating(DeviceWrapper dWrapper){
-        ArrayList<Integer> portTraffic = dWrapper.getPort_traffic();
+        HashMap<Integer, Integer> portTraffic = dWrapper.getPortTraffic();
 
         // Build bad ports to have open.
         // From dummies.
@@ -149,9 +147,9 @@ public class RatingsManager extends Thread{
         // From https://www.garykessler.net/library/bad_ports.html
         int[] gary_kessler_ports = new int[]{31, 1170, 1234, 1243, 1981, 2001, 2023, 2989, 3024, 3150, 3700, 4950, 6346, 6400, 6667, 6670, 12345, 12346, 16660, 20034, 20432, 20433, 27374, 27444, 27665, 30100, 31335, 31337, 33270, 33568, 40421, 60008, 65000};
 
-        int really_bad_hits = containsAny(portTraffic, really_bad_ports);
-        int gary_kessler_hits = containsAny(portTraffic, gary_kessler_ports);
-        int high_hits = containsHigh(portTraffic);
+        int really_bad_hits = containsAny(portTraffic.keySet(), really_bad_ports);
+        int gary_kessler_hits = containsAny(portTraffic.keySet(), gary_kessler_ports);
+        int high_hits = containsHigh(portTraffic.keySet());
 
         // Rating.
         Double rating = 0.0;
@@ -167,7 +165,7 @@ public class RatingsManager extends Thread{
         return 0.0;
 
     }
-    private int containsHigh(ArrayList<Integer> given_ports){
+    private int containsHigh(Set<Integer> given_ports){
         int hits = 0;
         for(Integer port : given_ports){
             if(port > 1000){
@@ -176,7 +174,7 @@ public class RatingsManager extends Thread{
         }
         return hits;
     }
-    private int containsAny(ArrayList<Integer> given_ports, int[] int_array){
+    private int containsAny(Set<Integer> given_ports, int[] int_array){
         int hits = 0;
 
         for (Integer port : given_ports){
@@ -191,20 +189,6 @@ public class RatingsManager extends Thread{
     private boolean contains(final int[] arr, final int key) {
         return Arrays.stream(arr).anyMatch(i -> i == key);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     public boolean twentySecondsAgo(Long last_security_rating){
         // Was last_security_rating more than 20 seconds ago?
