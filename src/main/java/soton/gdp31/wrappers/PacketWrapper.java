@@ -420,11 +420,16 @@ public class PacketWrapper {
     }
 
     public int[] getUniquePorts(){
-        if(this.src_mac_address == this.associated_mac_address){
-            return new int[]{srcPort};
-        } else {
-            return new int[]{destPort};
-        }
+        if(!(this.src_ip_bytes.getAddress().equals(Main.SYSTEM_IP))
+            || this.dest_ip_bytes.getAddress().equals(Main.SYSTEM_IP)){
+                if(this.src_mac_address == this.associated_mac_address){
+                    return new int[]{srcPort};
+                } else {
+                    return new int[]{destPort};
+                }
+            }
+            return new int[]{};
+
     }
 
     public InetAddress getAssociatedIpAddress() {

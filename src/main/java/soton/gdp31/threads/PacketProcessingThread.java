@@ -150,10 +150,6 @@ public class PacketProcessingThread extends Thread {
                     }
                 }
 
-                // Add packets to ArrayList for traffic.
-                deviceWrapper.addPortTraffic(pSrcPort);
-                deviceWrapper.addPortTraffic(pDestPort);
-
                 if (p.getIsDNSPacket())
                     p.getDNSQueries().stream().forEach(query -> {
                         deviceWrapper.addDNSQuery(query);
@@ -185,7 +181,7 @@ public class PacketProcessingThread extends Thread {
                 device_database_handler.updatePacketCounts(device, System.currentTimeMillis());
 
                 // Add to scan ports queue.
-                ScanProcessingQueue.instance.scanQueue.add(p);
+              //  ScanProcessingQueue.instance.scanQueue.add(p);
             }
         }
     }
