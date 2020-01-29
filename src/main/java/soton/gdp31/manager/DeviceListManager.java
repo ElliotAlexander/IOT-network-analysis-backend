@@ -6,12 +6,14 @@ import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.wrappers.DeviceWrapper;
 import soton.gdp31.wrappers.PacketWrapper;
 
+import java.net.InetAddress;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -44,10 +46,15 @@ public class DeviceListManager {
                 "FROM backend.device_stats_over_time " +
                 "GROUP BY uuid" +
             ") t JOIN backend.device_stats_over_time m ON m.uuid = t.uuid AND t.mx = m.timestamp;";
+
+        String port_traffic_query = "SELECT ports_traffic FROM backend.device_stats WHERE uuid = ?";
+
         try {
             this.c = db_connection_wrapper.getConnection();
             PreparedStatement preparedStatement = c.prepareStatement(query);
             ResultSet rs = preparedStatement.executeQuery();
+
+
             while (rs.next()) {
                 DeviceWrapper dw = new DeviceWrapper(rs.getBytes(1));
                 dw.setPacketCount(rs.getInt(2));
@@ -55,6 +62,16 @@ public class DeviceListManager {
                 dw.setDataTransferred(rs.getLong(4));
                 dw.setDataIn(rs.getLong(5));
                 dw.setDataOut(rs.getLong(6));
+
+
+                PreparedStatement portStatement = c.prepareStatement(port_traffic_query);
+                portStatement.setBytes(1, rs.getBytes(1));
+                ResultSet portRs = preparedStatement.executeQuery();
+                String portString = portRs.getString(1);
+                ArrayList portList = new ArrayList(Arrays.asList(portString.split(",")));
+
+                dw.setPort_traffic(portList);
+
                 device_list.add(dw);
             }
         } catch (SQLException | DBConnectionClosedException e) {
@@ -79,9 +96,10 @@ public class DeviceListManager {
         return device_list.stream().filter(d -> Arrays.equals(d.getUUID(),uuid)).collect(Collectors.toCollection(ArrayList::new)).get(0);
     }
 
-    public DeviceWrapper addDevice(byte[] uuid){
-        DeviceWrapper w = new DeviceWrapper(uuid);
+    public DeviceWrapper addDevice(byte[] uuid, InetAddress ip){
+        DeviceWrapper w = new DeviceWrapper(uuid, ip);
         w.setLastUpdateTime(System.currentTimeMillis());
+        w.setLast_rating_time(System.currentTimeMillis());
         device_list.add(w);
         return w;
     }
@@ -94,5 +112,7 @@ public class DeviceListManager {
         }
         return true;
     }
+
+
 
 }

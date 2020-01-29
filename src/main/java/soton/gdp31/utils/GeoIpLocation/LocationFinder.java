@@ -1,14 +1,6 @@
 package soton.gdp31.utils.GeoIpLocation;
 
 import soton.gdp31.logger.Logging;
-import soton.gdp31.utils.GeoIpLocation.GeoLocation;
-
-import com.maxmind.db.CHMCache;
-import com.maxmind.db.NoCache;
-import com.maxmind.db.NodeCache;
-import com.maxmind.db.Reader.FileMode;
-import com.maxmind.geoip2.DatabaseReader;
-import com.maxmind.geoip2.exception.AddressNotFoundException;
 import com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.maxmind.geoip2.model.CityResponse;
 import com.maxmind.geoip2.record.*;

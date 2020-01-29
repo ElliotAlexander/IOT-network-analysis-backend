@@ -3,11 +3,15 @@ package soton.gdp31.database;
 
 import main.java.soton.gdp31.utils.DeviceVendor.VendorChecker;
 import org.pcap4j.packet.DnsQuestion;
+import org.pcap4j.util.Inet4NetworkAddress;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.cache.DeviceUUIDCache;
 import soton.gdp31.wrappers.DeviceWrapper;
 import soton.gdp31.wrappers.PacketWrapper;
 
+import java.net.Inet4Address;
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.sql.*;
 import java.time.ZonedDateTime;
 import java.util.Iterator;
@@ -65,6 +69,9 @@ public class DBDeviceHandler {
                 device_stats_prepared_statement.setInt(5, 1);
                 device_stats_prepared_statement.setInt(6, p.getPacketSize());
                 device_stats_prepared_statement.execute();
+
+
+                String device_port_traffic_query = "INSERT INTO backend.device_stats";
             } catch (SQLException e) {
                 new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
             }
@@ -116,7 +123,7 @@ public class DBDeviceHandler {
         }
 
         // Device stats - general count.
-        String deviceStatsUpdateQuery = "UPDATE backend.device_stats SET packet_count = ?, https_packet_count = ?, data_transferred = ?, data_in = ?, data_out = ? where uuid = ?";
+        String deviceStatsUpdateQuery = "UPDATE backend.device_stats SET packet_count = ?, https_packet_count = ?, data_transferred = ?, data_in = ?, data_out = ?, ports_traffic = ? where uuid = ?";
         try {
             PreparedStatement preparedStatement = c.prepareStatement(deviceStatsUpdateQuery);
             preparedStatement.setLong(1, device_wrapper.getPacketCount());
@@ -124,7 +131,9 @@ public class DBDeviceHandler {
             preparedStatement.setLong(3, device_wrapper.getDataTransferred());
             preparedStatement.setLong(4, device_wrapper.getDataIn());
             preparedStatement.setLong(5, device_wrapper.getDataOut());
-            preparedStatement.setBytes(6, device_wrapper.getUUID());
+            preparedStatement.setString(6, device_wrapper.getPortTrafficString());
+            preparedStatement.setBytes(7, device_wrapper.getUUID());
+
             preparedStatement.executeUpdate();
         } catch (SQLException e){
             new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
@@ -171,8 +180,22 @@ public class DBDeviceHandler {
             preparedStatement.setLong(4, data_out);
             preparedStatement.execute();
         } catch (SQLException e){
-            new DBExceptionHandler(e, database_connection_handler);
+            new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
         }
 
+    }
+
+    public void upateDeviceIp(byte[] uuid, InetAddress ip_address){
+        String deviceStatsOverTimeInsertQuery = "UPDATE backend.devices SET internal_ip_v4 = ?, internal_ip_v6 = ? WHERE uuid = ?";
+        boolean isIpv4 = ip_address instanceof Inet4Address;
+        try {
+            PreparedStatement preparedStatement = c.prepareStatement(deviceStatsOverTimeInsertQuery);
+            preparedStatement.setString(1, isIpv4 ? ip_address.getHostAddress() : null);
+            preparedStatement.setString(2, !isIpv4 ? null : ip_address.getHostAddress());
+            preparedStatement.setBytes(3, uuid);
+            preparedStatement.execute();
+        } catch (SQLException e){
+            new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
+        }
     }
 }

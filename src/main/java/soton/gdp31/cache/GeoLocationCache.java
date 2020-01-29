@@ -18,6 +18,8 @@ public class GeoLocationCache {
     private Connection connection;
     private Long last_pushed;
 
+    private main.java.soton.gdp31.utils.TorExitNodes.TorChecker tor_checker;
+
     // Destination address cache. IP address -> Last seen epoch time.
 
     // UUID ->
@@ -50,6 +52,8 @@ public class GeoLocationCache {
         this.database_connection_handler = database_connection_handler;
         this.connection = database_connection_handler.getConnection();
         this.last_pushed = System.currentTimeMillis();
+
+        this.tor_checker = new main.java.soton.gdp31.utils.TorExitNodes.TorChecker();
     }
 
     public boolean needsLocating(byte[] given_uuid, String given_ip_address){

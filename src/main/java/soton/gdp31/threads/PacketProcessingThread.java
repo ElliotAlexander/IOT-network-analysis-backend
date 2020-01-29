@@ -3,6 +3,9 @@ package soton.gdp31.threads;
 import main.java.soton.gdp31.database.DBScanHandler;
 import main.java.soton.gdp31.utils.PortScanning.PortScanResult;
 import main.java.soton.gdp31.utils.PortScanning.PortScanner;
+import main.java.soton.gdp31.database.DBTorHandler;
+import main.java.soton.gdp31.utils.TorExitNodes.TorChecker;
+
 import soton.gdp31.database.DBConnection;
 import soton.gdp31.database.DBDeviceHandler;
 import soton.gdp31.database.DBLocationHandler;
@@ -34,7 +37,9 @@ public class PacketProcessingThread extends Thread {
     private soton.gdp31.threads.DeviceMonitorThread deviceMonitorThread;
     private GeoLocationCache geoLocationCache;
     private DBLocationHandler location_database_handler;
+    private DBTorHandler tor_database_handler;
     private LocationFinder locationFinder;
+    private TorChecker torChecker;
 
     private DBScanHandler scan_database_handler;
 
@@ -58,8 +63,9 @@ public class PacketProcessingThread extends Thread {
             this.device_database_handler = new DBDeviceHandler(connection_handler);
             this.scan_database_handler = new DBScanHandler(connection_handler);
             this.location_database_handler = new DBLocationHandler(connection_handler);
+            this.tor_database_handler = new DBTorHandler(connection_handler);
             this.deviceMonitorThread = new soton.gdp31.threads.DeviceMonitorThread(deviceListManager, device_database_handler);
-
+            this.torChecker = new TorChecker();
             return true;
         } catch (DBConnectionClosedException e) {
             e.printStackTrace();
@@ -84,10 +90,24 @@ public class PacketProcessingThread extends Thread {
 
             device_database_handler.addToDatabase(p);
 
+            // Get ports.
+            int pSrcPort = p.getSrcPort();
+            int pDestPort = p.getDestPort();
+
             if (deviceListManager.checkDevice(p.getUUID())) {
                 // Each device has it's own internal representation - a device wrapper.
                 // Get the correct device wrapper for the source / destination of this packet.
                 DeviceWrapper deviceWrapper = deviceListManager.getDevice(p.getUUID());
+
+                if(deviceWrapper.getIp() == null){
+                    deviceWrapper.setIp(p.getAssociatedIpAddress());
+                    Logging.logInfoMessage("Associated " + p.getAssociatedHostname() + " with ip " + p.getAssociatedIpAddress());
+                } else if(!p.getAssociatedIpAddress().equals(deviceWrapper.getIp())){
+                    Logging.logInfoMessage("Updating ip address for device " + p.getUUID());
+                    Logging.logInfoMessage("Old ip: " + deviceWrapper.getIp());
+                    Logging.logInfoMessage("New ip: " + p.getAssociatedIpAddress());
+                    device_database_handler.upateDeviceIp(p.getUUID(), p.getAssociatedIpAddress());
+                }
 
                 // Update internal representation.
                 if (p.isHTTPS()) {
@@ -102,6 +122,8 @@ public class PacketProcessingThread extends Thread {
                     deviceWrapper.setDataOut(deviceWrapper.getDataOut() + p.getPacketSize());
                 }
 
+
+
                 // Location provider.
                 if(p.isLocationable()){
                     // Set device UUID.
@@ -109,6 +131,7 @@ public class PacketProcessingThread extends Thread {
 
                     // Get external destination/source address.
                     String location_address = p.getLocation_address();
+
 
                     // Has this address been located before, within a list.
                     Boolean address_has_located = geoLocationCache.needsLocating(device_uuid, location_address);
@@ -126,8 +149,14 @@ public class PacketProcessingThread extends Thread {
                             // Do nothing.
                     }
 
+                    if(torChecker.checkNodeList(p.getLocation_address())){
+                        tor_database_handler.addTorNode(p.getUUID(), p.getLocation_address(), true);
+                    }
                 }
 
+                // Add packets to ArrayList for traffic.
+                deviceWrapper.addPortTraffic(pSrcPort);
+                deviceWrapper.addPortTraffic(pDestPort);
 
                 if (p.getIsDNSPacket())
                     p.getDNSQueries().stream().forEach(query -> {
@@ -145,30 +174,19 @@ public class PacketProcessingThread extends Thread {
                 }
             } else {
                 // If we haven't seen a device before.
-                System.out.println("Found new device " + p.getUUID());
-                DeviceWrapper device = deviceListManager.addDevice(p.getUUID());
-                System.out.println("Hostname: " + HostnameFetcher.fetchHostname(p.getSrcIp()));
+                System.out.println("Found new device " + p.getUUID() + " with ip " + p.getAssociatedIpAddress());
+                DeviceWrapper device = deviceListManager.addDevice(p.getUUID(), p.getAssociatedIpAddress());
+
+                device.addPortTraffic(pSrcPort);
+                device.addPortTraffic(pDestPort);
+
+                System.out.println("Hostname: " + p.getAssociatedHostname());
                 device_database_handler.updatePacketCounts(device, System.currentTimeMillis());
 
                 // Add to scan ports queue.
                 ScanProcessingQueue.instance.scanQueue.add(p);
             }
-
         }
     }
 
-    public void scanPorts(PacketWrapper p, boolean initial){
-        PortScanner scanner = new PortScanner();
-        String device_ip_address = p.getSrcIp();
-
-        ArrayList<PortScanResult> results = scanner.scan_device_ports(device_ip_address);
-
-        String string_for_db = scanner.extract_list_of_open_ports(results);
-
-        if(initial){
-            scan_database_handler.addToDatabase(p.getUUID(), string_for_db);
-        } else {
-            scan_database_handler.updateDatabase(p.getUUID(), string_for_db);
-        }
-    }
 }
