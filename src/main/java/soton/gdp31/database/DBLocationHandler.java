@@ -10,17 +10,17 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 
-import main.java.soton.gdp31.utils.TorExitNodes.TorChecker;
+import soton.gdp31.utils.TorExitNodes.TorChecker;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.utils.GeoIpLocation.GeoLocation;
 import soton.gdp31.utils.GeoIpLocation.LocationFinder;
 
 public class DBLocationHandler {
 
-    private final soton.gdp31.database.DBConnection database_connection_handler;
+    private final DBConnection database_connection_handler;
     private Connection c;
     private LocationFinder finder;
-    private main.java.soton.gdp31.utils.TorExitNodes.TorChecker torChecker;
+    private TorChecker torChecker;
 
     public DBLocationHandler(soton.gdp31.database.DBConnection database_connection_handler) throws DBConnectionClosedException {
         this.database_connection_handler = database_connection_handler;

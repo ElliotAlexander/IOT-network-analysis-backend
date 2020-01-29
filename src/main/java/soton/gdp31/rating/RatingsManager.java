@@ -1,4 +1,4 @@
-package main.java.soton.gdp31.rating;
+package soton.gdp31.rating;
 
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.OptionalDouble;
 import java.util.stream.DoubleStream;
 
-import main.java.soton.gdp31.database.DBRatingHandler;
+import soton.gdp31.database.DBRatingHandler;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.wrappers.DeviceWrapper;
 import soton.gdp31.database.DBConnection;

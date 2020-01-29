@@ -1,4 +1,4 @@
-package main.java.soton.gdp31.rating;
+package soton.gdp31.rating;
 
 public class DeviceRating {
     private byte[] uuid; // Identifier

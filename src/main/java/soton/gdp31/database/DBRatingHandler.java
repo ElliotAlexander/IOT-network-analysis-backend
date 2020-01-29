@@ -1,14 +1,18 @@
-package main.java.soton.gdp31.database;
+package soton.gdp31.database;
 
-import main.java.soton.gdp31.rating.DeviceRating;
+import soton.gdp31.logger.Logging;
+import soton.gdp31.rating.DeviceRating;
+import soton.gdp31.exceptions.database.DBConnectionClosedException;
+import soton.gdp31.rating.DeviceRating;
+import soton.gdp31.wrappers.DeviceWrapper;
 
 import java.sql.*;
 
 public class DBRatingHandler {
-    private final soton.gdp31.database.DBConnection database_connection_handler;
+    private final DBConnection database_connection_handler;
     private Connection c;
 
-    public DBRatingHandler(soton.gdp31.database.DBConnection database_connection_handler) throws soton.gdp31.exceptions.database.DBConnectionClosedException {
+    public DBRatingHandler(DBConnection database_connection_handler) throws DBConnectionClosedException {
         this.database_connection_handler = database_connection_handler;
         this.c = database_connection_handler.getConnection();
     }
@@ -54,14 +58,14 @@ public class DBRatingHandler {
 
             ps.executeUpdate();
 
-            soton.gdp31.logger.Logging.logInfoMessage("Inserted rating for new device: " + deviceRating.getUuid().toString());
+            Logging.logInfoMessage("Inserted rating for new device: " + deviceRating.getUuid().toString());
         } catch (SQLException e) {
-            soton.gdp31.logger.Logging.logErrorMessage("Failed to insert rating for new device.");
+            Logging.logErrorMessage("Failed to insert rating for new device.");
             e.printStackTrace();
         }
     }
 
-    public String pullOpenPorts(soton.gdp31.wrappers.DeviceWrapper dWrapper) {
+    public String pullOpenPorts(DeviceWrapper dWrapper) {
         try {
 
             String select_query =

@@ -1,9 +1,6 @@
-package main.java.soton.gdp31.utils.TorExitNodes;
-
-import main.java.soton.gdp31.database.DBTorHandler;
+package soton.gdp31.utils.TorExitNodes;
 
 import java.io.*;
-import java.net.InetAddress;
 import java.util.ArrayList;
 
 public class TorChecker {

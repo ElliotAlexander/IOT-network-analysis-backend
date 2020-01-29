@@ -1,7 +1,8 @@
 
 package soton.gdp31.database;
 
-import main.java.soton.gdp31.utils.DeviceVendor.VendorChecker;
+import soton.gdp31.logger.Logging;
+import soton.gdp31.utils.DeviceVendor.VendorChecker;
 import org.pcap4j.packet.DnsQuestion;
 import org.pcap4j.util.Inet4NetworkAddress;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
@@ -25,11 +26,11 @@ import java.util.List;
  */
 public class DBDeviceHandler {
 
-    private final soton.gdp31.database.DBConnection database_connection_handler;
+    private final DBConnection database_connection_handler;
     private Connection c;
     private VendorChecker vendorChecker;
 
-    public DBDeviceHandler(soton.gdp31.database.DBConnection database_connection_handler) throws DBConnectionClosedException {
+    public DBDeviceHandler(DBConnection database_connection_handler) throws DBConnectionClosedException {
         this.database_connection_handler = database_connection_handler;
         this.c = database_connection_handler.getConnection();
         this.vendorChecker = new VendorChecker();
@@ -88,20 +89,11 @@ public class DBDeviceHandler {
             preparedStatement.setBytes(2, device.getUUID());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
+            new DBExceptionHandler(e, database_connection_handler);
         }
     }
 
-    public void updatePacketCounts(DeviceWrapper device_wrapper, long timestamp){
-
-        /**
-         * Update the device stats over time table
-         *
-         * We keep two counts - one general count (to avoid us having to search many rows for an overall view),
-         * And a count recorded by time, to allow us to graph this data if we want.
-         * Both tables need to be updated seperately.
-         */
-
+    public void updateLivePacketCounts(DeviceWrapper device_wrapper, long timestamp){
         // Device stats over time
         String deviceStatsOverTimeInsertQuery = "INSERT INTO backend.device_stats_over_time(uuid, timestamp, packet_count, https_packet_count, data_transferred, data_in, data_out) VALUES(?,?,?,?,?,?,?)";
         try {
@@ -119,8 +111,19 @@ public class DBDeviceHandler {
             preparedStatement.execute();
 
         } catch (SQLException e){
-            new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
+            new DBExceptionHandler(e, database_connection_handler);
         }
+    }
+
+    public void updatePacketCounts(DeviceWrapper device_wrapper, long timestamp){
+
+        /**
+         * Update the device stats over time table
+         *
+         * We keep two counts - one general count (to avoid us having to search many rows for an overall view),
+         * And a count recorded by time, to allow us to graph this data if we want.
+         * Both tables need to be updated seperately.
+         */
 
         // Device stats - general count.
         String deviceStatsUpdateQuery = "UPDATE backend.device_stats SET packet_count = ?, https_packet_count = ?, data_transferred = ?, data_in = ?, data_out = ?, ports_traffic = ? where uuid = ?";
@@ -136,7 +139,7 @@ public class DBDeviceHandler {
 
             preparedStatement.executeUpdate();
         } catch (SQLException e){
-            new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
+            new DBExceptionHandler(e, database_connection_handler);
         }
     }
 
@@ -180,7 +183,7 @@ public class DBDeviceHandler {
             preparedStatement.setLong(4, data_out);
             preparedStatement.execute();
         } catch (SQLException e){
-            new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
+            new DBExceptionHandler(e, database_connection_handler);
         }
 
     }
@@ -195,7 +198,7 @@ public class DBDeviceHandler {
             preparedStatement.setBytes(3, uuid);
             preparedStatement.execute();
         } catch (SQLException e){
-            new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
+            new DBExceptionHandler(e, database_connection_handler);
         }
     }
 }

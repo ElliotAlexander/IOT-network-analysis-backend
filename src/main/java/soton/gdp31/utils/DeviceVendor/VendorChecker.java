@@ -1,4 +1,6 @@
-package main.java.soton.gdp31.utils.DeviceVendor;
+package soton.gdp31.utils.DeviceVendor;
+
+import soton.gdp31.logger.Logging;
 
 import java.io.*;
 import java.util.regex.Pattern;
@@ -20,28 +22,32 @@ public class VendorChecker {
     }
 
     public String checkMac(String associated_mac_address) {
-        try {
-            String oui = associated_mac_address.substring(0, 8);
-            String line;
-            Pattern pattern = Pattern.compile("\\*");
-            while ((line = br.readLine()) != null) {
-                // process the line.
-                boolean flag = line.toLowerCase().contains(oui.toLowerCase());
+        if(associated_mac_address != null){
+            try {
+                String oui = associated_mac_address.substring(0, 8);
+                String line;
+                Pattern pattern = Pattern.compile("\\*");
+                while ((line = br.readLine()) != null) {
+                    // process the line.
+                    boolean flag = line.toLowerCase().contains(oui.toLowerCase());
 
-                if (flag) {
-                    String[] data = pattern.split(line);
-                    String vendor = data[1];
-                    soton.gdp31.logger.Logging.logInfoMessage("Vendor: " + vendor);
-                    return vendor;
+                    if (flag) {
+                        String[] data = pattern.split(line);
+                        String vendor = data[1];
+                        Logging.logInfoMessage("Vendor: " + vendor);
+                        return vendor;
+                    }
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
+                Logging.logInfoMessage("Vendor not found");
+                return null;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            soton.gdp31.logger.Logging.logInfoMessage("Vendor not found");
+            Logging.logWarnMessage("Vendor not found.");
+            return null;
+        } else {
+            Logging.logWarnMessage("Vendor not found: Mac address too short. Mac Address:" + associated_mac_address);
             return null;
         }
-        soton.gdp31.logger.Logging.logInfoMessage("Vendor not found");
-
-        return null;
     }
 }

@@ -5,11 +5,10 @@ import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.database.DBExceptionHandler;
 import soton.gdp31.logger.Logging;
 import soton.gdp31.utils.GeoIpLocation.GeoLocation;
+import soton.gdp31.utils.TorExitNodes.TorChecker;
 
-import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
 import java.util.*;
-import java.security.NoSuchAlgorithmException;
 
 public class GeoLocationCache {
 
@@ -18,7 +17,7 @@ public class GeoLocationCache {
     private Connection connection;
     private Long last_pushed;
 
-    private main.java.soton.gdp31.utils.TorExitNodes.TorChecker tor_checker;
+    private TorChecker tor_checker;
 
     // Destination address cache. IP address -> Last seen epoch time.
 
@@ -48,12 +47,12 @@ public class GeoLocationCache {
     }
 
     private GeoLocationCache(DBConnection database_connection_handler) throws DBConnectionClosedException {
-        address_location_cache = new HashMap<byte[], HashMap<String, soton.gdp31.utils.GeoIpLocation.GeoLocation>>();
+        address_location_cache = new HashMap<byte[], HashMap<String, GeoLocation>>();
         this.database_connection_handler = database_connection_handler;
         this.connection = database_connection_handler.getConnection();
         this.last_pushed = System.currentTimeMillis();
 
-        this.tor_checker = new main.java.soton.gdp31.utils.TorExitNodes.TorChecker();
+        this.tor_checker = new TorChecker();
     }
 
     public boolean needsLocating(byte[] given_uuid, String given_ip_address){
@@ -63,10 +62,10 @@ public class GeoLocationCache {
         for (Map.Entry uuids : address_location_cache.entrySet()) {
             byte[] uuid = (byte[]) uuids.getKey();
 
-            HashMap<String, soton.gdp31.utils.GeoIpLocation.GeoLocation> devices_addresses = (HashMap<String, soton.gdp31.utils.GeoIpLocation.GeoLocation>) uuids.getValue();
+            HashMap<String, soton.gdp31.utils.GeoIpLocation.GeoLocation> devices_addresses = (HashMap<String, GeoLocation>) uuids.getValue();
             for(Map.Entry address_locations : devices_addresses.entrySet()) {
                 String ip_address = (String) address_locations.getKey();
-                soton.gdp31.utils.GeoIpLocation.GeoLocation location = (soton.gdp31.utils.GeoIpLocation.GeoLocation) address_locations.getValue();
+                GeoLocation location = (GeoLocation) address_locations.getValue();
 
                 if(given_ip_address.equals(ip_address)){
                     devices_contacted_ip.add(uuid);

@@ -33,8 +33,13 @@ public class DeviceMonitorThread extends Thread {
                      data_out += deviceWrapper.getDataOut();
                 }
                 handler.updateSumDeviceStats(data_transferred, data_in, data_out);
-                Logging.logInfoMessage("Updated cumulative device stats.");
                 current = System.currentTimeMillis();
+            } else {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }

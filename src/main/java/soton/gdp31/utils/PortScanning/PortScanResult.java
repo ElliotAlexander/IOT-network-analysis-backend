@@ -1,4 +1,4 @@
-package main.java.soton.gdp31.utils.PortScanning;
+package soton.gdp31.utils.PortScanning;
 
 public class PortScanResult {
     private final String ip_address;

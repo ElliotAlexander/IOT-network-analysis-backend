@@ -1,4 +1,4 @@
-package main.java.soton.gdp31.database;
+package soton.gdp31.database;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

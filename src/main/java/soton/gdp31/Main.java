@@ -1,12 +1,13 @@
 package soton.gdp31;
 
 
-import main.java.soton.gdp31.threads.PortScanManagerThread;
+import soton.gdp31.threads.PortScanManagerThread;
 import soton.gdp31.config.ConfigLoader;
 import soton.gdp31.exceptions.network.InvalidInterfaceAddressException;
 import soton.gdp31.logger.Logging;
 import soton.gdp31.threads.PacketListenerThread;
 import soton.gdp31.threads.PacketProcessingThread;
+import soton.gdp31.threads.PortScanManagerThread;
 import soton.gdp31.utils.NetworkUtils.NetworkIdentification;
 
 import java.net.InetAddress;
@@ -50,7 +51,7 @@ public class Main {
     public static String hardcode_gateway_ip;
 
     public static final int PPT_THREAD_COUNT = 1;
-    public static final int SCAN_THREAD_COUNT = 2;
+    public static final int SCAN_THREAD_COUNT = 1;
 
     public static void main(String[] args) {
         new Main();

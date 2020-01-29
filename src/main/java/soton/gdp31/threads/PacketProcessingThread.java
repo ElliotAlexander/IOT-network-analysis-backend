@@ -1,10 +1,8 @@
 package soton.gdp31.threads;
 
-import main.java.soton.gdp31.database.DBScanHandler;
-import main.java.soton.gdp31.utils.PortScanning.PortScanResult;
-import main.java.soton.gdp31.utils.PortScanning.PortScanner;
-import main.java.soton.gdp31.database.DBTorHandler;
-import main.java.soton.gdp31.utils.TorExitNodes.TorChecker;
+import soton.gdp31.database.DBScanHandler;
+import soton.gdp31.database.DBTorHandler;
+import soton.gdp31.utils.TorExitNodes.TorChecker;
 
 import soton.gdp31.database.DBConnection;
 import soton.gdp31.database.DBDeviceHandler;
@@ -13,15 +11,12 @@ import soton.gdp31.exceptions.database.DBConnectionClosedException;
 import soton.gdp31.logger.Logging;
 import soton.gdp31.manager.DeviceListManager;
 import soton.gdp31.utils.GeoIpLocation.LocationFinder;
-import soton.gdp31.utils.NetworkUtils.HostnameFetcher;
 import soton.gdp31.utils.PacketProcessingQueue;
 import soton.gdp31.utils.ScanProcessingQueue;
 import soton.gdp31.wrappers.DeviceWrapper;
 import soton.gdp31.wrappers.PacketWrapper;
 import soton.gdp31.cache.GeoLocationCache;
 import soton.gdp31.utils.GeoIpLocation.GeoLocation;
-
-import java.util.ArrayList;
 
 /**
  * @Author Elliot Alexander
@@ -122,8 +117,6 @@ public class PacketProcessingThread extends Thread {
                     deviceWrapper.setDataOut(deviceWrapper.getDataOut() + p.getPacketSize());
                 }
 
-
-
                 // Location provider.
                 if(p.isLocationable()){
                     // Set device UUID.
@@ -165,22 +158,27 @@ public class PacketProcessingThread extends Thread {
 
 
                 // Every ten seconds - update the database.
-                if (System.currentTimeMillis() - deviceWrapper.getLastUpdateTime() > 10000) {
+                if (System.currentTimeMillis() - deviceWrapper.getLastUpdateTime() > 3000) {
                     deviceWrapper.setLastUpdateTime(System.currentTimeMillis());
                     device_database_handler.updateLastSeen(deviceWrapper);
                     device_database_handler.updatePacketCounts(deviceWrapper, System.currentTimeMillis());
                     device_database_handler.updateDNSQueries(deviceWrapper);
                     geoLocationCache.pushCacheToDatabase();
                 }
+
+
+                if(System.currentTimeMillis() - deviceWrapper.getLastLiveUpdateTime() > 60000 ){
+                    long current = System.currentTimeMillis();
+                    device_database_handler.updateLivePacketCounts(deviceWrapper, current);
+                    deviceWrapper.setLastLiveUpdateTime(current);
+                }
             } else {
                 // If we haven't seen a device before.
-                System.out.println("Found new device " + p.getUUID() + " with ip " + p.getAssociatedIpAddress());
+                System.out.println("Found new device " + p.getUUID() + " with ip " + p.getAssociatedIpAddress() + ". Hostname: " + p.getAssociatedHostname());
                 DeviceWrapper device = deviceListManager.addDevice(p.getUUID(), p.getAssociatedIpAddress());
 
                 device.addPortTraffic(pSrcPort);
                 device.addPortTraffic(pDestPort);
-
-                System.out.println("Hostname: " + p.getAssociatedHostname());
                 device_database_handler.updatePacketCounts(device, System.currentTimeMillis());
 
                 // Add to scan ports queue.

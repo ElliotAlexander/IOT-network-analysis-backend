@@ -1,17 +1,11 @@
 package soton.gdp31.wrappers;
 
-import main.java.soton.gdp31.utils.PortScanning.PortScanResult;
+import soton.gdp31.logger.Logging;
 import org.pcap4j.packet.DnsQuestion;
-import soton.gdp31.database.DBConnection;
-import soton.gdp31.exceptions.database.DBConnectionClosedException;
-import soton.gdp31.exceptions.database.DBUknownDeviceException;
+
 
 import java.net.InetAddress;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.sql.*;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 
@@ -39,6 +33,7 @@ public class DeviceWrapper {
 
     private long last_update_time = -1;
     private long last_rating_time = -1;
+    private long last_live_update_time = -1;
 
     private ArrayList<Integer> port_traffic;
 
@@ -58,27 +53,11 @@ public class DeviceWrapper {
 
     public String getPortTrafficString(){
             ArrayList<Integer> results = getPort_traffic();
-            Iterator i = results.iterator();
-            ArrayList<Integer> list_of_ints = new ArrayList<>();
-            while(i.hasNext()){
-                PortScanResult scanResult = (PortScanResult) i.next();
-                int portNumber = scanResult.getPort();
-                if(scanResult.isOpen()) {
-                    list_of_ints.add(portNumber);
-                }
+            StringBuilder sb  = new StringBuilder();
+            for(Integer i : results){
+                sb.append(sb.toString());
             }
-
-            StringBuilder sb = new StringBuilder();
-            for(int j = list_of_ints.size() - 1; j >= 0; j--){
-                int num = list_of_ints.get(j);
-                sb.append(num);
-                sb.append(',');
-            }
-
-            // Remove last ','
             String result = sb.toString();
-            result = result.substring(0, result.length()-1);
-
             return result;
     }
 
@@ -89,10 +68,6 @@ public class DeviceWrapper {
     }
     public ArrayList<Integer> getPort_traffic() {
         return port_traffic;
-    }
-
-    public void setPort_traffic(ArrayList<Integer> port_traffic) {
-        this.port_traffic = port_traffic;
     }
 
     public byte[] getUUID() {
@@ -173,5 +148,13 @@ public class DeviceWrapper {
 
     public void setDataOut(long data_out) {
         this.data_out = data_out;
+    }
+
+    public long getLastLiveUpdateTime() {
+        return last_live_update_time;
+    }
+
+    public void setLastLiveUpdateTime(long last_live_update_time) {
+        this.last_live_update_time = last_live_update_time;
     }
 }

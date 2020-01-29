@@ -1,7 +1,7 @@
-package main.java.soton.gdp31.utils.PortScanning;
+package soton.gdp31.utils.PortScanning;
 
-import javax.annotation.processing.Completion;
-import javax.sound.sampled.Port;
+import soton.gdp31.logger.Logging;
+
 import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
@@ -11,7 +11,41 @@ import java.util.concurrent.*;
 
 public class PortScanner {
 
-    public Future<PortScanResult> is_tcp_port_open(final ExecutorService es, final String ip, final int port, final int timeout){
+
+
+    public ArrayList<PortScanResult> scanDevicePorts(String ip){
+        final ExecutorService es = Executors.newFixedThreadPool(20);
+        final int timeout = 200;
+        final List<Future<PortScanResult>> futures = new ArrayList<>();
+
+
+        Logging.logInfoMessage("Starting scan .... on ... " + ip);
+        for(int port = 1; port <= 65535; port++){
+            futures.add(is_tcp_port_open(es, ip, port, timeout));
+        }
+        es.shutdown();
+        Logging.logInfoMessage("Finished scan");
+        ArrayList<PortScanResult> results = new ArrayList<>();
+
+        try{
+            Logging.logInfoMessage("Starting for loop.");
+            for (final Future<PortScanResult> f : futures) {
+                results.add(f.get());
+            }
+            Logging.logInfoMessage("Finished for loop.");
+
+        } catch (InterruptedException e) {
+            Logging.logWarnMessage("Interrupted Exception error thrown when attempting to scan device: " + ip);
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            Logging.logWarnMessage("Execution Exception error thrown when attempting to scan device: " + ip);
+            e.printStackTrace();
+        }
+
+        return results;
+    }
+
+    private Future<PortScanResult> is_tcp_port_open(final ExecutorService es, final String ip, final int port, final int timeout){
         return es.submit(new Callable<PortScanResult>() {
             @Override
             public PortScanResult call(){
@@ -26,38 +60,6 @@ public class PortScanner {
                 }
             }
         });
-    }
-
-    public ArrayList<PortScanResult> scan_device_ports(String ip){
-        final ExecutorService es = Executors.newFixedThreadPool(20);
-        final int timeout = 200;
-        final List<Future<PortScanResult>> futures = new ArrayList<>();
-
-
-        soton.gdp31.logger.Logging.logInfoMessage("Starting scan .... on ... " + ip);
-        for(int port = 1; port <= 65535; port++){
-            futures.add(is_tcp_port_open(es, ip, port, timeout));
-        }
-        es.shutdown();
-        soton.gdp31.logger.Logging.logInfoMessage("Finished scan");
-        ArrayList<PortScanResult> results = new ArrayList<>();
-
-        try{
-            soton.gdp31.logger.Logging.logInfoMessage("Starting for loop.");
-            for (final Future<PortScanResult> f : futures) {
-                results.add(f.get());
-            }
-            soton.gdp31.logger.Logging.logInfoMessage("Finished for loop.");
-
-        } catch (InterruptedException e) {
-            soton.gdp31.logger.Logging.logWarnMessage("Interrupted Exception error thrown when attempting to scan device: " + ip);
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            soton.gdp31.logger.Logging.logWarnMessage("Execution Exception error thrown when attempting to scan device: " + ip);
-            e.printStackTrace();
-        }
-
-        return results;
     }
 
     public String extract_list_of_open_ports(ArrayList<PortScanResult> results){
