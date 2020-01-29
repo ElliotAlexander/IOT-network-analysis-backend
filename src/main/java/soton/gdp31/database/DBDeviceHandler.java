@@ -103,7 +103,7 @@ public class DBDeviceHandler {
                     timestamp
             ));
             preparedStatement.setLong(3, device_wrapper.getPacketCount());
-            preparedStatement.setLong(4, device_wrapper.getPacketCount());
+            preparedStatement.setLong(4, device_wrapper.getHttpsPacketCount());
             preparedStatement.setLong(5, device_wrapper.getDataTransferred());
             preparedStatement.setLong(6, device_wrapper.getDataIn());
             preparedStatement.setLong(7, device_wrapper.getDataOut());
@@ -150,38 +150,38 @@ public class DBDeviceHandler {
         }
 
         byte[] uuid = device.getUUID();
-        try {
-            c.setAutoCommit(false);
-            PreparedStatement prepStmt = c.prepareStatement(
-                    "INSERT INTO backend.device_dns_storage(uuid, url) VALUES (?,?) ON CONFLICT DO NOTHING;");
-            Iterator<DnsQuestion> it = device.getDNSQueries().iterator();
-            while(it.hasNext()){
-                DnsQuestion p = it.next();
-                prepStmt.setBytes(1,uuid);
-                prepStmt.setString(2,p.getQName().getName());
-                prepStmt.addBatch();
+            try {
+                c.setAutoCommit(false);
+                PreparedStatement prepStmt = c.prepareStatement(
+                        "INSERT INTO backend.device_dns_storage(uuid, url) VALUES (?,?) ON CONFLICT DO NOTHING;");
+                Iterator<DnsQuestion> it = device.getDNSQueries().iterator();
+                while(it.hasNext()){
+                    DnsQuestion p = it.next();
+                    prepStmt.setBytes(1,uuid);
+                    prepStmt.setString(2,p.getQName().getName());
+                    prepStmt.addBatch();
+                }
+
+                int [] numUpdates=prepStmt.executeBatch();
+                c.commit();
+                c.setAutoCommit(true);
+            } catch (SQLException e) {
+                e.printStackTrace();
+                System.out.println(e.getNextException());
             }
-
-            int [] numUpdates=prepStmt.executeBatch();
-            c.commit();
-            c.setAutoCommit(true);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.out.println(e.getNextException());
         }
-    }
 
-    public void updateSumDeviceStats(long data_transferred, long data_in, long data_out){
-        String deviceStatsOverTimeInsertQuery = "INSERT INTO backend.device_data_sum_over_time(timestamp, data_transferred, data_in, data_out) VALUES(?,?,?,?)";
-        try {
-            PreparedStatement preparedStatement = c.prepareStatement(deviceStatsOverTimeInsertQuery);
-            preparedStatement.setTimestamp(1, new Timestamp(
-                    System.currentTimeMillis()
-            ));
-            preparedStatement.setLong(2, data_transferred);
-            preparedStatement.setLong(3, data_in);
-            preparedStatement.setLong(4, data_out);
-            preparedStatement.execute();
+        public void updateSumDeviceStats(long data_transferred, long data_in, long data_out){
+            String deviceStatsOverTimeInsertQuery = "INSERT INTO backend.device_data_sum_over_time(timestamp, data_transferred, data_in, data_out) VALUES(?,?,?,?)";
+            try {
+                PreparedStatement preparedStatement = c.prepareStatement(deviceStatsOverTimeInsertQuery);
+                preparedStatement.setTimestamp(1, new Timestamp(
+                        System.currentTimeMillis()
+                ));
+                preparedStatement.setLong(2, data_transferred);
+                preparedStatement.setLong(3, data_in);
+                preparedStatement.setLong(4, data_out);
+                preparedStatement.execute();
         } catch (SQLException e){
             new DBExceptionHandler(e, database_connection_handler);
         }
