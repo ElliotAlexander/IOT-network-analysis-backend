@@ -34,9 +34,11 @@ public class RatingsManager extends Thread{
         while(true){
                 for(DeviceWrapper device : manager.getDevices()){
                     if(device.getIp() != null) {
-                        DeviceRating rating = generateRating(device);
-                        rating_handler.addRating(rating);
-                        device.setLast_rating_time(System.currentTimeMillis());
+                        if(tenSecondsAgo(device.getLast_rating_time())) {
+                            DeviceRating rating = generateRating(device);
+                            rating_handler.addRating(rating);
+                            device.setLast_rating_time(System.currentTimeMillis());
+                        }
                     }
 
                 }
@@ -145,7 +147,7 @@ public class RatingsManager extends Thread{
         private Double genUploadRating(DeviceWrapper dWrapper){
             Long upload = dWrapper.getDataOut();
             Long total = dWrapper.getDataTransferred();
-            
+
             Double percentage_of = ((double) upload/total);
             return percentage_of;
         }
@@ -153,6 +155,8 @@ public class RatingsManager extends Thread{
 
         private Double genPortTrafficRating(DeviceWrapper dWrapper){
             HashMap<Integer, Integer> portTraffic = dWrapper.getPortTraffic();
+            HashMap<Integer, Integer> secondClone = (HashMap<Integer, Integer>) portTraffic.clone();
+            HashMap<Integer, Integer> thirdClone = (HashMap<Integer, Integer>) portTraffic.clone();
 
         // Build bad ports to have open.
         // From dummies.
@@ -163,8 +167,8 @@ public class RatingsManager extends Thread{
         int[] gary_kessler_ports = new int[]{31, 1170, 1234, 1243, 1981, 2001, 2023, 2989, 3024, 3150, 3700, 4950, 6346, 6400, 6667, 6670, 12345, 12346, 16660, 20034, 20432, 20433, 27374, 27444, 27665, 30100, 31335, 31337, 33270, 33568, 40421, 60008, 65000};
 
         int really_bad_hits = containsAny(portTraffic.keySet(), really_bad_ports);
-        int gary_kessler_hits = containsAny(portTraffic.keySet(), gary_kessler_ports);
-        int high_hits = containsHigh(portTraffic.keySet());
+        int gary_kessler_hits = containsAny(secondClone.keySet(), gary_kessler_ports);
+        int high_hits = containsHigh(thirdClone.keySet());
 
         // Rating.
         Double rating = 0.0;
@@ -205,8 +209,8 @@ public class RatingsManager extends Thread{
         return Arrays.stream(arr).anyMatch(i -> i == key);
     }
 
-    public boolean twentySecondsAgo(Long last_security_rating){
+    public boolean tenSecondsAgo(Long last_security_rating){
         // Was last_security_rating more than 20 seconds ago?
-        return (System.currentTimeMillis() - last_security_rating > 20000);
+        return (System.currentTimeMillis() - last_security_rating > 10000);
     }
 }
