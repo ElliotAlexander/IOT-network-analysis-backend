@@ -1,11 +1,13 @@
 package soton.gdp31;
 
 
+import soton.gdp31.threads.PortScanManagerThread;
 import soton.gdp31.config.ConfigLoader;
 import soton.gdp31.exceptions.network.InvalidInterfaceAddressException;
 import soton.gdp31.logger.Logging;
 import soton.gdp31.threads.PacketListenerThread;
 import soton.gdp31.threads.PacketProcessingThread;
+import soton.gdp31.threads.PortScanManagerThread;
 import soton.gdp31.utils.NetworkUtils.NetworkIdentification;
 
 import java.net.InetAddress;
@@ -49,6 +51,7 @@ public class Main {
     public static String hardcode_gateway_ip;
 
     public static final int PPT_THREAD_COUNT = 1;
+    public static final int SCAN_THREAD_COUNT = 1;
 
     public static void main(String[] args) {
         new Main();
@@ -72,6 +75,7 @@ public class Main {
             Logging.logInfoMessage("Network Mask: " + InetAddress.getByAddress(this.SUBNET_MASK));
             Logging.logInfoMessage("System IP: " + InetAddress.getByAddress(this.SYSTEM_IP));
             Logging.logInfoMessage("Broadcast Subnet Address: " + InetAddress.getByAddress(this.BROADCAST_SUBNET_ADDRESS));
+
         } catch (UnknownHostException e) {
             Logging.logErrorMessage("Error fetching network information.");
             e.printStackTrace();
@@ -82,6 +86,7 @@ public class Main {
 
         // Instantiate
 
+        Logging.logInfoMessage("Available Cores: + " + Runtime.getRuntime().availableProcessors());
         // Start our listening thread.
         Logging.logInfoMessage("Starting packet listner thread");
         PacketListenerThread plt = new PacketListenerThread();
@@ -90,11 +95,20 @@ public class Main {
         ArrayList<Thread> threadPool = new ArrayList<Thread>();
         threadPool.add(plt);
 
+        // Packet Processing threads.
         for(int i = 0; i < PPT_THREAD_COUNT; i++){
             Logging.logInfoMessage("Starting packet processing thread number " + i);
             PacketProcessingThread ppt = new PacketProcessingThread();
             ppt.start();
             threadPool.add(ppt);
+        }
+
+        // PortScan Threads.
+        for(int i = 0; i < SCAN_THREAD_COUNT; i++){
+            Logging.logInfoMessage("Starting port scanning thread number " + i);
+            PortScanManagerThread pst = new PortScanManagerThread();
+            pst.start();
+            threadPool.add(pst);
         }
 
         while(true){

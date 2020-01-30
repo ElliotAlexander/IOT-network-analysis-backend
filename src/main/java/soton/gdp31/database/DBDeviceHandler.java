@@ -1,7 +1,8 @@
 
 package soton.gdp31.database;
 
-import main.java.soton.gdp31.utils.DeviceVendor.VendorChecker;
+import soton.gdp31.logger.Logging;
+import soton.gdp31.utils.DeviceVendor.VendorChecker;
 import org.pcap4j.packet.DnsQuestion;
 import org.pcap4j.util.Inet4NetworkAddress;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
@@ -25,11 +26,11 @@ import java.util.List;
  */
 public class DBDeviceHandler {
 
-    private final soton.gdp31.database.DBConnection database_connection_handler;
+    private final DBConnection database_connection_handler;
     private Connection c;
     private VendorChecker vendorChecker;
 
-    public DBDeviceHandler(soton.gdp31.database.DBConnection database_connection_handler) throws DBConnectionClosedException {
+    public DBDeviceHandler(DBConnection database_connection_handler) throws DBConnectionClosedException {
         this.database_connection_handler = database_connection_handler;
         this.c = database_connection_handler.getConnection();
         this.vendorChecker = new VendorChecker();
@@ -69,6 +70,9 @@ public class DBDeviceHandler {
                 device_stats_prepared_statement.setInt(5, 1);
                 device_stats_prepared_statement.setInt(6, p.getPacketSize());
                 device_stats_prepared_statement.execute();
+
+
+                String device_port_traffic_query = "INSERT INTO backend.device_stats";
             } catch (SQLException e) {
                 new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
             }
@@ -85,7 +89,29 @@ public class DBDeviceHandler {
             preparedStatement.setBytes(2, device.getUUID());
             preparedStatement.executeUpdate();
         } catch (SQLException e) {
-            new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
+            new DBExceptionHandler(e, database_connection_handler);
+        }
+    }
+
+    public void updateLivePacketCounts(DeviceWrapper device_wrapper, long timestamp){
+        // Device stats over time
+        String deviceStatsOverTimeInsertQuery = "INSERT INTO backend.device_stats_over_time(uuid, timestamp, packet_count, https_packet_count, data_transferred, data_in, data_out) VALUES(?,?,?,?,?,?,?)";
+        try {
+            PreparedStatement preparedStatement = c.prepareStatement(deviceStatsOverTimeInsertQuery);
+            preparedStatement.setBytes(1, device_wrapper.getUUID());
+            preparedStatement.setTimestamp(2, new Timestamp(
+                    timestamp
+            ));
+            preparedStatement.setLong(3, device_wrapper.getPacketCount());
+            preparedStatement.setLong(4, device_wrapper.getHttpsPacketCount());
+            preparedStatement.setLong(5, device_wrapper.getDataTransferred());
+            preparedStatement.setLong(6, device_wrapper.getDataIn());
+            preparedStatement.setLong(7, device_wrapper.getDataOut());
+
+            preparedStatement.execute();
+
+        } catch (SQLException e){
+            new DBExceptionHandler(e, database_connection_handler);
         }
     }
 
@@ -99,28 +125,8 @@ public class DBDeviceHandler {
          * Both tables need to be updated seperately.
          */
 
-        // Device stats over time
-        String deviceStatsOverTimeInsertQuery = "INSERT INTO backend.device_stats_over_time(uuid, timestamp, packet_count, https_packet_count, data_transferred, data_in, data_out) VALUES(?,?,?,?,?,?,?)";
-        try {
-            PreparedStatement preparedStatement = c.prepareStatement(deviceStatsOverTimeInsertQuery);
-            preparedStatement.setBytes(1, device_wrapper.getUUID());
-            preparedStatement.setTimestamp(2, new Timestamp(
-                    timestamp
-            ));
-            preparedStatement.setLong(3, device_wrapper.getPacketCount());
-            preparedStatement.setLong(4, device_wrapper.getPacketCount());
-            preparedStatement.setLong(5, device_wrapper.getDataTransferred());
-            preparedStatement.setLong(6, device_wrapper.getDataIn());
-            preparedStatement.setLong(7, device_wrapper.getDataOut());
-
-            preparedStatement.execute();
-
-        } catch (SQLException e){
-            new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
-        }
-
         // Device stats - general count.
-        String deviceStatsUpdateQuery = "UPDATE backend.device_stats SET packet_count = ?, https_packet_count = ?, data_transferred = ?, data_in = ?, data_out = ? where uuid = ?";
+        String deviceStatsUpdateQuery = "UPDATE backend.device_stats SET packet_count = ?, https_packet_count = ?, data_transferred = ?, data_in = ?, data_out = ?, ports_traffic = ? where uuid = ?";
         try {
             PreparedStatement preparedStatement = c.prepareStatement(deviceStatsUpdateQuery);
             preparedStatement.setLong(1, device_wrapper.getPacketCount());
@@ -128,10 +134,12 @@ public class DBDeviceHandler {
             preparedStatement.setLong(3, device_wrapper.getDataTransferred());
             preparedStatement.setLong(4, device_wrapper.getDataIn());
             preparedStatement.setLong(5, device_wrapper.getDataOut());
-            preparedStatement.setBytes(6, device_wrapper.getUUID());
+            preparedStatement.setString(6, device_wrapper.getPortTrafficString());
+            preparedStatement.setBytes(7, device_wrapper.getUUID());
+
             preparedStatement.executeUpdate();
         } catch (SQLException e){
-            new soton.gdp31.database.DBExceptionHandler(e, database_connection_handler);
+            new DBExceptionHandler(e, database_connection_handler);
         }
     }
 
@@ -142,38 +150,38 @@ public class DBDeviceHandler {
         }
 
         byte[] uuid = device.getUUID();
-        try {
-            c.setAutoCommit(false);
-            PreparedStatement prepStmt = c.prepareStatement(
-                    "INSERT INTO backend.device_dns_storage(uuid, url) VALUES (?,?) ON CONFLICT DO NOTHING;");
-            Iterator<DnsQuestion> it = device.getDNSQueries().iterator();
-            while(it.hasNext()){
-                DnsQuestion p = it.next();
-                prepStmt.setBytes(1,uuid);
-                prepStmt.setString(2,p.getQName().getName());
-                prepStmt.addBatch();
+            try {
+                c.setAutoCommit(false);
+                PreparedStatement prepStmt = c.prepareStatement(
+                        "INSERT INTO backend.device_dns_storage(uuid, url) VALUES (?,?) ON CONFLICT DO NOTHING;");
+                Iterator<DnsQuestion> it = device.getDNSQueries().iterator();
+                while(it.hasNext()){
+                    DnsQuestion p = it.next();
+                    prepStmt.setBytes(1,uuid);
+                    prepStmt.setString(2,p.getQName().getName());
+                    prepStmt.addBatch();
+                }
+
+                int [] numUpdates=prepStmt.executeBatch();
+                c.commit();
+                c.setAutoCommit(true);
+            } catch (SQLException e) {
+                e.printStackTrace();
+                System.out.println(e.getNextException());
             }
-
-            int [] numUpdates=prepStmt.executeBatch();
-            c.commit();
-            c.setAutoCommit(true);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.out.println(e.getNextException());
         }
-    }
 
-    public void updateSumDeviceStats(long data_transferred, long data_in, long data_out){
-        String deviceStatsOverTimeInsertQuery = "INSERT INTO backend.device_data_sum_over_time(timestamp, data_transferred, data_in, data_out) VALUES(?,?,?,?)";
-        try {
-            PreparedStatement preparedStatement = c.prepareStatement(deviceStatsOverTimeInsertQuery);
-            preparedStatement.setTimestamp(1, new Timestamp(
-                    System.currentTimeMillis()
-            ));
-            preparedStatement.setLong(2, data_transferred);
-            preparedStatement.setLong(3, data_in);
-            preparedStatement.setLong(4, data_out);
-            preparedStatement.execute();
+        public void updateSumDeviceStats(long data_transferred, long data_in, long data_out){
+            String deviceStatsOverTimeInsertQuery = "INSERT INTO backend.device_data_sum_over_time(timestamp, data_transferred, data_in, data_out) VALUES(?,?,?,?)";
+            try {
+                PreparedStatement preparedStatement = c.prepareStatement(deviceStatsOverTimeInsertQuery);
+                preparedStatement.setTimestamp(1, new Timestamp(
+                        System.currentTimeMillis()
+                ));
+                preparedStatement.setLong(2, data_transferred);
+                preparedStatement.setLong(3, data_in);
+                preparedStatement.setLong(4, data_out);
+                preparedStatement.execute();
         } catch (SQLException e){
             new DBExceptionHandler(e, database_connection_handler);
         }

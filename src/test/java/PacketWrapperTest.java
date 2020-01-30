@@ -14,6 +14,7 @@ import soton.gdp31.logger.Logging;
 import soton.gdp31.wrappers.PacketWrapper;
 
 public class PacketWrapperTest {
+    /**
 
     private PacketWrapper wrapper;
 
@@ -54,4 +55,6 @@ public class PacketWrapperTest {
         assert wrapper.getDestIp().equals("127.0.0.1");
 
     }
+
+    **/
 }

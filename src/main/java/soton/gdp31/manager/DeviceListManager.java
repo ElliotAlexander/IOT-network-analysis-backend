@@ -3,6 +3,7 @@ package soton.gdp31.manager;
 import soton.gdp31.cache.DeviceUpdateCache;
 import soton.gdp31.database.DBConnection;
 import soton.gdp31.exceptions.database.DBConnectionClosedException;
+import soton.gdp31.logger.Logging;
 import soton.gdp31.wrappers.DeviceWrapper;
 import soton.gdp31.wrappers.PacketWrapper;
 
@@ -13,6 +14,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 
 /**
@@ -40,15 +43,19 @@ public class DeviceListManager {
      */
     public DeviceListManager(DBConnection db_connection_wrapper){
         device_list = new ArrayList<>();
-        String query = "SELECT m.uuid, m.packet_count, m.https_packet_count, m.data_transferred, m.data_in, m.data_out, t.mx FROM ( " +
+        String query = "SELECT r.*, o.ports_traffic FROM (SELECT m.uuid, m.packet_count, m.https_packet_count, m.data_transferred, m.data_in, m.data_out, t.mx AS o FROM ( " +
                 "SELECT uuid, MAX(timestamp) AS mx " +
                 "FROM backend.device_stats_over_time " +
                 "GROUP BY uuid" +
-            ") t JOIN backend.device_stats_over_time m ON m.uuid = t.uuid AND t.mx = m.timestamp;";
+            ") t JOIN backend.device_stats_over_time m ON m.uuid = t.uuid AND t.mx = m.timestamp) r JOIN backend.device_stats o ON r.uuid = o.uuid;";
+
+
         try {
             this.c = db_connection_wrapper.getConnection();
             PreparedStatement preparedStatement = c.prepareStatement(query);
             ResultSet rs = preparedStatement.executeQuery();
+
+
             while (rs.next()) {
                 DeviceWrapper dw = new DeviceWrapper(rs.getBytes(1));
                 dw.setPacketCount(rs.getInt(2));
@@ -56,6 +63,16 @@ public class DeviceListManager {
                 dw.setDataTransferred(rs.getLong(4));
                 dw.setDataIn(rs.getLong(5));
                 dw.setDataOut(rs.getLong(6));
+                String portString = rs.getString(8);
+                if(!portString.isEmpty()){
+                    ArrayList<String> portList = new ArrayList(Arrays.asList(portString.split(",")));
+                    portList.forEach( x -> {
+                        String[] res = x.split(":");
+                        int port = Integer.parseInt(res[0]);
+                        int count = Integer.parseInt(res[1]);
+                        dw.setPortTraffic(port, count);
+                    });
+                }
                 device_list.add(dw);
             }
         } catch (SQLException | DBConnectionClosedException e) {
@@ -83,6 +100,7 @@ public class DeviceListManager {
     public DeviceWrapper addDevice(byte[] uuid, InetAddress ip){
         DeviceWrapper w = new DeviceWrapper(uuid, ip);
         w.setLastUpdateTime(System.currentTimeMillis());
+        w.setLast_rating_time(System.currentTimeMillis());
         device_list.add(w);
         return w;
     }
@@ -95,5 +113,7 @@ public class DeviceListManager {
         }
         return true;
     }
+
+
 
 }

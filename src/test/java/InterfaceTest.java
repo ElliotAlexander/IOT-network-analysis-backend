@@ -20,10 +20,12 @@ import static org.junit.Assert.*;
  *
  */
 class InterfaceTest {
+    /*
 
     private PcapHandle ph;
 
-    /*
+
+
     @BeforeEach
     public void setupPcapHandle() throws Exception {
         ph = Pcaps.openOffline("src/test/resources/example.pcap");

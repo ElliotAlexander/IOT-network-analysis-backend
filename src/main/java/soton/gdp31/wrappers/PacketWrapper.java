@@ -58,6 +58,7 @@ public class PacketWrapper {
 
     private byte[] uuid;
 
+
     private boolean is_locationable = false;
     private String location_address;
     public PacketWrapper(EthernetPacket p, long timestamp, long packet_count) throws InvalidIPPacketException, UnhandledTrafficException, IPv6DeviceException {
@@ -121,30 +122,31 @@ public class PacketWrapper {
             }
         }
 
+        if(!this.isIPv6) {
+            if (this.is_broadcast_traffic) {
 
-            if (this.is_broadcast_traffic) {        if(!this.isIPv6) {
-
-                try {
-                    if (!this.src_ip_bytes.equals(InetAddress.getByName("0.0.0.0"))  && !this.src_ip_bytes.equals(InetAddress.getByName("0:0:0:0:0:0:0:0"))) {
-                        this.uuid = UUIDGenerator.generateUUID(src_mac_address);
-                        associated_mac_address = src_mac_address;
-                        associated_hostname = src_hostname;
-                        associated_ip_address = src_ip_bytes;
-                    } else {
-                        Logging.logWarnMessage("Skipping unidentified broadcast traffic.");
+                    try {
+                        if (!this.src_ip_bytes.equals(InetAddress.getByName("0.0.0.0")) && !this.src_ip_bytes.equals(InetAddress.getByName("0:0:0:0:0:0:0:0"))) {
+                            this.uuid = UUIDGenerator.generateUUID(src_mac_address);
+                            associated_mac_address = src_mac_address;
+                            associated_hostname = src_hostname;
+                            associated_ip_address = src_ip_bytes;
+                        } else {
+                            Logging.logWarnMessage("Skipping unidentified broadcast traffic.");
+                        }
+                    } catch (NoSuchAlgorithmException e) {
+                        Logging.logErrorMessage("Error initialising connections for device " + src_mac_address);
+                        this.is_processable = false;
+                        e.printStackTrace();
+                    } catch (UnknownHostException e) {
+                        Logging.logInfoMessage("Failed to parse ip address.");
+                        this.is_processable = false;
+                        e.printStackTrace();
                     }
-                } catch (NoSuchAlgorithmException e) {
-                    Logging.logErrorMessage("Error initialising connections for device " + src_mac_address);
-                    this.is_processable = false;
-                    e.printStackTrace();
-                } catch (UnknownHostException e) {
-                    Logging.logInfoMessage("Failed to parse ip address.");
-                    this.is_processable = false;
-                    e.printStackTrace();
-                }
             } else {
                 boolean src_is_internal = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getSrcAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
                 boolean dest_is_internal = NetworkIdentification.compareIPSubnets(ipPacket.getHeader().getDstAddr().getAddress(), Main.GATEWAY_IP, Main.SUBNET_MASK);
+
                 this.is_internal_traffic = (dest_is_internal && src_is_internal);
                 try {
                     if (is_internal_traffic) {      // Is the traffic purely internal? Or is just the source internal
@@ -266,6 +268,9 @@ public class PacketWrapper {
         }
 
         this.packetSize = p.length();
+        if(this.src_mac_address == null || this.dest_mac_address == null){
+            this.is_processable = false;
+        }
     }
 
     public boolean isIpPacket() {
@@ -388,6 +393,7 @@ public class PacketWrapper {
         long privLow10 = ipToLong("10.0.0.0");
         long privHigh10 = ipToLong("10.255.255.255");
 
+        // IP address is between low and high 10.
         boolean result10 = ipToTest >= privLow10 && ipToTest <= privHigh10;
 
 
@@ -411,6 +417,19 @@ public class PacketWrapper {
         }
 
         return publicIP;
+    }
+
+    public int[] getUniquePorts(){
+        if(!(this.src_ip_bytes.getAddress().equals(Main.SYSTEM_IP))
+            || this.dest_ip_bytes.getAddress().equals(Main.SYSTEM_IP)){
+                if(this.src_mac_address == this.associated_mac_address){
+                    return new int[]{srcPort};
+                } else {
+                    return new int[]{destPort};
+                }
+            }
+            return new int[]{};
+
     }
 
     public InetAddress getAssociatedIpAddress() {

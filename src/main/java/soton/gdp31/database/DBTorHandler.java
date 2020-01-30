@@ -1,4 +1,7 @@
-package main.java.soton.gdp31.database;
+package soton.gdp31.database;
+
+import soton.gdp31.exceptions.database.DBConnectionClosedException;
+import soton.gdp31.utils.TorExitNodes.TorChecker;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -9,12 +12,12 @@ public class DBTorHandler {
     private final soton.gdp31.database.DBConnection database_connection_handler;
     private Connection c;
     private soton.gdp31.utils.GeoIpLocation.LocationFinder finder;
-    private main.java.soton.gdp31.utils.TorExitNodes.TorChecker torChecker;
+    private TorChecker torChecker;
 
-    public DBTorHandler(soton.gdp31.database.DBConnection database_connection_handler) throws soton.gdp31.exceptions.database.DBConnectionClosedException {
+    public DBTorHandler(soton.gdp31.database.DBConnection database_connection_handler) throws DBConnectionClosedException {
         this.database_connection_handler = database_connection_handler;
         this.c = database_connection_handler.getConnection();
-        this.torChecker = new main.java.soton.gdp31.utils.TorExitNodes.TorChecker();
+        this.torChecker = new TorChecker();
     }
 
 
