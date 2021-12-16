@@ -1,8 +1,7 @@
-# GDP-Group-31-Backend
-
+# Middleware Network 
 [![CircleCI](https://circleci.com/gh/ElliotAlexander/GDP-Group-31-Backend.svg?style=svg&circle-token=b58db770983c57865e5c66b2b18e083b59f28593)](https://circleci.com/gh/ElliotAlexander/GDP-Group-31-Backend)
 
-This is the Java based backend for GDP Group 31. 
+This is the Java based backend for the middleware network analysis project.
 
 
 ## Selecting your network interface
