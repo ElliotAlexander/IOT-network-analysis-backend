@@ -1,7 +1,9 @@
 # Middleware Network 
-[![CircleCI](https://circleci.com/gh/ElliotAlexander/GDP-Group-31-Backend.svg?style=svg&circle-token=b58db770983c57865e5c66b2b18e083b59f28593)](https://circleci.com/gh/ElliotAlexander/GDP-Group-31-Backend)
+[![CircleCI](https://circleci.com/gh/ElliotAlexander/IOT-network-analysis-backend.svg?style=svg&circle-token=b58db770983c57865e5c66b2b18e083b59f28593)](https://circleci.com/gh/ElliotAlexander/IOT-network-analysis-backend)
 
-This is the Java based backend for the middleware network analysis project.
+This is the Java based backend for the IOT network analysis project. The ambition of the project was to build a proof of concept solution for analysing live network traffic from IoT devices and identify possible security vulbnerabilities and malicious activity.
+
+This repository forms the backend of the project.
 
 
 ## Selecting your network interface
