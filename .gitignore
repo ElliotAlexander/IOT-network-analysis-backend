@@ -72,3 +72,6 @@ fabric.properties
 .DS_Store
 .DS_Store/
 build/
+
+# Remove GeoLite databases
+*.mmdb
