@@ -72,3 +72,12 @@ fabric.properties
 .DS_Store
 .DS_Store/
 build/
+
+# Remove GeoLite databases
+*.mmdb
+
+# Don't include generated pcaps
+*.pcap
+
+# Don't include binaries 
+*.jar
